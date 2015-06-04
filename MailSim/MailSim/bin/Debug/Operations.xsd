@@ -48,6 +48,8 @@
               </xs:sequence>
               <!-- Unique name for the operation, this will be used as a reference for the sequence file-->
               <xs:attribute name="OperationName" type="xs:string" use="required" />
+              <!-- Number of emails to send. Minimum value for Count is 1. -->
+              <xs:attribute name="Count" type="xs:integer" use="optional" />
               <!-- Sleep between each action -->
               <xs:attribute name="Sleep" type="xs:integer" use="optional" />
             </xs:complexType>
@@ -102,7 +104,7 @@
               <xs:attribute name="ReplyAll" type="xs:boolean" use="required" />
               <!-- Number of emails to reply. If Count is a non-zero value, it will reply the specified number
               of emails (in order). If Count is 0, it will reply a random number of emails. -->
-               <xs:attribute name="Count" type="xs:string" use="required" />
+               <xs:attribute name="Count" type="xs:integer" use="required" />
               <!-- Sleep between each action -->
               <xs:attribute name="Sleep" type="xs:integer" use="optional" />
             </xs:complexType>
@@ -155,7 +157,7 @@
               <xs:attribute name="OperationName" type="xs:string" use="required" />
               <!-- Number of emails to forward. If Count is a non-zero value, it will forward the specified number
               of emails (in order). If Count is 0, it will forward a random number of emails. -->
-               <xs:attribute name="Count" type="xs:string" use="required" />
+               <xs:attribute name="Count" type="xs:integer" use="required" />
               <!-- Sleep between each action -->
               <xs:attribute name="Sleep" type="xs:integer" use="optional" />
             </xs:complexType>
@@ -173,7 +175,7 @@
               <xs:attribute name="OperationName" type="xs:string" use="required" />
               <!-- Number of emails to copy. If Count is a non-zero value, it will copy the specified number
               of emails (in order). If Count is 0, it will copy a random number of emails. -->
-               <xs:attribute name="Count" type="xs:string" use="required" />
+               <xs:attribute name="Count" type="xs:integer" use="required" />
               <!-- Sleep between each action -->
               <xs:attribute name="Sleep" type="xs:integer" use="optional" />
             </xs:complexType>
@@ -190,7 +192,7 @@
               <xs:attribute name="OperationName" type="xs:string" use="required" />
               <!-- Number of folder to create. If Count is a non-zero value, it will create the specified number
               of folders. If Count is 0, it will create a random number of folders (between 1 to 100). -->
-               <xs:attribute name="Count" type="xs:string" use="required" />
+               <xs:attribute name="Count" type="xs:integer" use="required" />
               <!-- Sleep between each action -->
               <xs:attribute name="Sleep" type="xs:integer" use="optional" />
             </xs:complexType>
@@ -208,7 +210,7 @@
               <xs:attribute name="OperationName" type="xs:string" use="required" />
               <!-- Number of folder to delete. If Count is a non-zero value, it will delete the specified number
               of folders (in order). If Count is 0, it will delete a random number of folders. -->
-              <xs:attribute name="Count" type="xs:string" use="required" />
+              <xs:attribute name="Count" type="xs:integer" use="required" />
               <!-- Sleep between each action -->
               <xs:attribute name="Sleep" type="xs:integer" use="optional" />
             </xs:complexType>
