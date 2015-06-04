@@ -192,7 +192,6 @@ namespace MailSim
             if (inbox.MailItemsCount >= 1)
             {
                 MailItem replyMail = inboxMailItems.GetFirst().Reply(true);
-                // string body = replyMail.Body;
                 replyMail.Body = "Reply All by MailSim" + replyMail.Body;
                 Console.WriteLine("Message Body:");
                 Console.WriteLine(replyMail.Body);
@@ -204,7 +203,6 @@ namespace MailSim
             if (inbox.MailItemsCount >= 2)
             {
                 MailItem forwardMail = inboxMailItems.GetNext().Forward();
-                // string body = forwardMail.Body;
                 forwardMail.Body = "Forward by MailSim" + forwardMail.Body;
                 Console.WriteLine("Message Body:");
                 Console.WriteLine(forwardMail.Body);
