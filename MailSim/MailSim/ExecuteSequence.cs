@@ -697,7 +697,7 @@ namespace MailSim
                     indexToCopy = random ? randomNum.Next(0, mails.Count - 1) : mails.Count - 1;
                     Log.Out(Log.Severity.Info, operation.OperationName, "Move to {0}: {1}",
                         operation.DestinationFolder, mails[indexToCopy].Subject);
-                    
+
                     mails[indexToCopy].Move(destinationFolder);
 
                     if (!string.IsNullOrEmpty(operation.Sleep))
@@ -830,7 +830,7 @@ namespace MailSim
                     Log.Out(Log.Severity.Info, operation.OperationName, "Starting iteration {0}", count);
 
                     indexToDelete = random ? randomNum.Next(0, subFolders.Count - 1) : subFolders.Count - 1;
-                    
+
                     // deletes the folder and remove it from the saved list
                     Log.Out(Log.Severity.Info, operation.OperationName, "Deleting folder: {0}", subFolders[indexToDelete].Name);
                     subFolders[indexToDelete].Delete();
@@ -868,16 +868,9 @@ namespace MailSim
                 MailFolder folder = olMailStore.GetDefaultFolder(operation.Folder);
                 if (folder == null)
                 {
-                    // might be a custom folder under the Inbox (right now we'll only support folders under the Inbox)
-                    MailFolder inboxFolder = olMailStore.GetDefaultFolder("olFolderInbox");
-                    MailFolders mfCollection = inboxFolder.GetSubFolders();
-                    folder = mfCollection.FindFolder(operation.Folder);
-                    if (folder == null)
-                    {
-                        Log.Out(Log.Severity.Error, operation.OperationName, "Unable to retrieve folder {0}",
-                         operation.Folder);
-                        return false;
-                    }
+                    Log.Out(Log.Severity.Error, operation.OperationName, "Unable to retrieve folder {0}",
+                     operation.Folder);
+                    return false;
                 }
 
                 // makes sure we are not already registered for the folder
@@ -1052,7 +1045,7 @@ namespace MailSim
                     }
 
                     int recipientNumber;
-                    for (int count = 0; count < randomCount; count ++)
+                    for (int count = 0; count < randomCount; count++)
                     {
                         recipientNumber = randomNum.Next(0, galUsers.Count - 1);
                         recipients.Add(galUsers[recipientNumber]);
