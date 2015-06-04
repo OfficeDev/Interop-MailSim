@@ -1,0 +1,11 @@
+D:\Office\dev\interoptools\MailSim\MailSim\bin\Debug\MailSim.exe.config
+D:\Office\dev\interoptools\MailSim\MailSim\bin\Debug\MailSim.exe
+D:\Office\dev\interoptools\MailSim\MailSim\bin\Debug\MailSim.pdb
+D:\Office\dev\interoptools\MailSim\MailSim\obj\Debug\MailSim.csprojResolveAssemblyReference.cache
+D:\Office\dev\interoptools\MailSim\MailSim\obj\Debug\MailSim.exe
+D:\Office\dev\interoptools\MailSim\MailSim\obj\Debug\MailSim.pdb
+D:\Office\dev\interoptools\MailSim\MailSim\bin\Debug\Operations.xsd
+D:\Office\dev\interoptools\MailSim\MailSim\bin\Debug\Sequence.xsd
+C:\Users\andreida\Source\Repos\Interop\MailSim\MailSim\bin\Debug\MailSim.exe.config
+C:\Users\andreida\Source\Repos\Interop\MailSim\MailSim\obj\Debug\MailSim.exe
+C:\Users\andreida\Source\Repos\Interop\MailSim\MailSim\obj\Debug\MailSim.pdb

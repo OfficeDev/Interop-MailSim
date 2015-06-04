@@ -1,0 +1,232 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="MailSimOperations">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:choice maxOccurs="unbounded">
+
+          <xs:element name="MailSend">
+            <xs:complexType>
+              <xs:sequence>
+                <!-- Specify either random recipients or specific recipient(s)-->
+                <xs:choice>
+                  <xs:element minOccurs="0" maxOccurs="unbounded" name="Recipients" type="xs:string" />
+                  <!-- Random recipients will be queried from the address book. If the value is 0, it will send
+                  to random number of recipients. Otherwise, it will send email to the specified number
+                  of random recipients.-->
+                  <xs:element minOccurs="0" maxOccurs="1" name="RandomRecipients">
+                    <xs:complexType>
+                      <xs:simpleContent>
+                        <xs:extension base="xs:integer">
+                          <!-- Specify whether to pick random users from a specific Distribution List. It'll 
+                          pick from all users if DistributionList is "".-->
+                          <xs:attribute name="DistributionList" type="xs:string" use="required" />
+                        </xs:extension>
+                      </xs:simpleContent>
+                    </xs:complexType>
+                  </xs:element>
+                </xs:choice>
+                <xs:element minOccurs="0" name="Subject" type="xs:string" />
+                <xs:element minOccurs="0" name="Body" type="xs:string" />
+                <!-- Specify either random attachments or specific attachment(s) -->
+                <xs:choice>
+                  <!-- Use absolute path for the attachement.-->
+                  <xs:element minOccurs="0" maxOccurs="unbounded" name="Attachment" type="xs:string" />
+                  <!-- Specify the file path for the random attachments-->
+                  <xs:element minOccurs="0" name="RandomAttachments">
+                    <xs:complexType>
+                      <xs:simpleContent>
+                        <xs:extension base="xs:string">
+                          <!-- If Count is a non-zero value, it will attach the specified number of random attachments.
+                          If Count is 0, it will attach a random number of attachments. -->
+                          <xs:attribute name="Count" type="xs:integer"  use="optional"/>
+                        </xs:extension>
+                      </xs:simpleContent>
+                    </xs:complexType>
+                  </xs:element>
+                </xs:choice>
+              </xs:sequence>
+              <!-- Unique name for the operation, this will be used as a reference for the sequence file-->
+              <xs:attribute name="OperationName" type="xs:string" use="required" />
+              <!-- Sleep between each action -->
+              <xs:attribute name="Sleep" type="xs:integer" use="optional" />
+            </xs:complexType>
+          </xs:element>
+
+          <xs:element name="MailDelete">
+            <xs:complexType>
+              <xs:sequence>
+                <!-- List of supported folders can be found in http://msdn.microsoft.com/en-us/library/office/microsoft.office.interop.outlook.oldefaultfolders%28v=office.15%29.aspx -->
+                <xs:element name="Folder" type="xs:string" />
+                <xs:element minOccurs="0" name="Subject" type="xs:string" />
+              </xs:sequence>
+              <!-- Unique name for the operation, this will be used as a reference for the sequence file-->
+              <xs:attribute name="OperationName" type="xs:string" use="required" />
+              <!-- Number of emails to delete. If Count is a non-zero value, it will delete the specified number
+              of emails (in order). If Count is 0, it will delete a random number of emails. -->
+              <xs:attribute name="Count" type="xs:integer" use="required" />
+              <!-- Sleep between each action -->
+              <xs:attribute name="Sleep" type="xs:integer" use="optional" />
+            </xs:complexType>
+          </xs:element>
+
+          <xs:element name="MailReply">
+            <xs:complexType>
+              <xs:sequence>
+                <!-- List of supported folders can be found in http://msdn.microsoft.com/en-us/library/office/microsoft.office.interop.outlook.oldefaultfolders%28v=office.15%29.aspx -->
+                <xs:element name="Folder" type="xs:string" />
+                <!-- The tool finds all emails containing the MailSubjectToReply subject to reply, if specified-->
+                <xs:element minOccurs="0" name="MailSubjectToReply" type="xs:string" />
+                <xs:element minOccurs="0" name="ReplyBody" type="xs:string" />
+                <!-- Specify either random attachments or specific attachment(s) -->
+                <xs:choice>
+                  <!-- Use absolute path for the attachement.-->
+                  <xs:element minOccurs="0" maxOccurs="unbounded" name="Attachment" type="xs:string" />
+                  <!-- Specify the file path for the random attachments-->
+                  <xs:element minOccurs="0" name="RandomAttachments">
+                    <xs:complexType>
+                      <xs:simpleContent>
+                        <xs:extension base="xs:string">
+                          <!-- If Count is a non-zero value, it will attach specified the number of random attachments.
+                          If Count is 0, it will attach a random number of attachments. -->
+                          <xs:attribute name="Count" type="xs:integer"  use="optional"/>
+                        </xs:extension>
+                      </xs:simpleContent>
+                    </xs:complexType>
+                  </xs:element>
+                </xs:choice>
+              </xs:sequence>
+              <!-- Unique name for the operation, this will be used as a reference for the sequence file-->
+              <xs:attribute name="OperationName" type="xs:string" use="required" />
+              <!-- ReplyAll can be "true" to reply all, or "false" to only reply to the sender-->
+              <xs:attribute name="ReplyAll" type="xs:boolean" use="required" />
+              <!-- Number of emails to reply. If Count is a non-zero value, it will reply the specified number
+              of emails (in order). If Count is 0, it will reply a random number of emails. -->
+               <xs:attribute name="Count" type="xs:string" use="required" />
+              <!-- Sleep between each action -->
+              <xs:attribute name="Sleep" type="xs:integer" use="optional" />
+            </xs:complexType>
+          </xs:element>
+
+          <xs:element name="MailForward">
+            <xs:complexType>
+              <xs:sequence>
+                <!-- List of supported folders can be found in http://msdn.microsoft.com/en-us/library/office/microsoft.office.interop.outlook.oldefaultfolders%28v=office.15%29.aspx -->
+                <xs:element name="Folder" type="xs:string" />
+                <!-- Specify either random recipients or specific recipient(s)-->
+                <xs:choice>
+                  <xs:element minOccurs="0" maxOccurs="unbounded" name="Recipients" type="xs:string" />
+                  <!-- Random recipients will be queried from the address book. If the value is 0, it will send
+                  to random number of recipients. Otherwise, it will send email to the specified number
+                  of random recipients.-->
+                  <xs:element minOccurs="0" maxOccurs="1" name="RandomRecipients">
+                    <xs:complexType>
+                      <xs:simpleContent>
+                        <xs:extension base="xs:integer">
+                          <!-- Specify whether to pick random users from a specific Distribution List. It'll 
+                          pick from all users if DistributionList is "".-->
+                          <xs:attribute name="DistributionList" type="xs:string" use="required" />
+                        </xs:extension>
+                      </xs:simpleContent>
+                    </xs:complexType>
+                  </xs:element>
+                </xs:choice>
+                <xs:element minOccurs="0" name="MailSubjectToForward" type="xs:string" />
+                <xs:element minOccurs="0" name="ForwardBody" type="xs:string" />
+                <!-- Specify either random attachments or specific attachment(s) -->
+                <xs:choice>
+                  <!-- Use absolute path for the attachement.-->
+                  <xs:element minOccurs="0" maxOccurs="unbounded" name="Attachment" type="xs:string" />
+                  <!-- Specify the file path for the random attachments-->
+                  <xs:element minOccurs="0" name="RandomAttachments">
+                    <xs:complexType>
+                      <xs:simpleContent>
+                        <xs:extension base="xs:string">
+                          <!-- If Count is a non-zero value, it will attach the specified number of random attachments.
+                          If Count is 0, it will attach a random number of attachments. -->
+                          <xs:attribute name="Count" type="xs:integer"  use="optional"/>
+                        </xs:extension>
+                      </xs:simpleContent>
+                    </xs:complexType>
+                  </xs:element>
+                </xs:choice>
+              </xs:sequence>
+              <!-- Unique name for the operation, this will be used as a reference for the sequence file-->
+              <xs:attribute name="OperationName" type="xs:string" use="required" />
+              <!-- Number of emails to forward. If Count is a non-zero value, it will forward the specified number
+              of emails (in order). If Count is 0, it will forward a random number of emails. -->
+               <xs:attribute name="Count" type="xs:string" use="required" />
+              <!-- Sleep between each action -->
+              <xs:attribute name="Sleep" type="xs:integer" use="optional" />
+            </xs:complexType>
+          </xs:element>
+
+          <xs:element name="MailMove">
+            <xs:complexType>
+              <xs:sequence>
+                <!-- List of supported folders can be found in http://msdn.microsoft.com/en-us/library/office/microsoft.office.interop.outlook.oldefaultfolders%28v=office.15%29.aspx -->
+                <xs:element name="SourceFolder" type="xs:string" />
+                <xs:element name="DestinationFolder" type="xs:string" />
+                <xs:element minOccurs="0" name="Subject" type="xs:string" />
+              </xs:sequence>
+              <!-- Unique name for the operation, this will be used as a reference for the sequence file-->
+              <xs:attribute name="OperationName" type="xs:string" use="required" />
+              <!-- Number of emails to copy. If Count is a non-zero value, it will copy the specified number
+              of emails (in order). If Count is 0, it will copy a random number of emails. -->
+               <xs:attribute name="Count" type="xs:string" use="required" />
+              <!-- Sleep between each action -->
+              <xs:attribute name="Sleep" type="xs:integer" use="optional" />
+            </xs:complexType>
+          </xs:element>
+
+          <xs:element name="FolderCreate">
+            <xs:complexType>
+              <xs:sequence>
+                <!-- List of supported folders can be found in http://msdn.microsoft.com/en-us/library/office/microsoft.office.interop.outlook.oldefaultfolders%28v=office.15%29.aspx -->
+                <xs:element name="FolderPath" type="xs:string" />
+                <xs:element name="FolderName" type="xs:string" />
+              </xs:sequence>
+              <!-- Unique name for the operation, this will be used as a reference for the sequence file-->
+              <xs:attribute name="OperationName" type="xs:string" use="required" />
+              <!-- Number of folder to create. If Count is a non-zero value, it will create the specified number
+              of folders. If Count is 0, it will create a random number of folders (between 1 to 100). -->
+               <xs:attribute name="Count" type="xs:string" use="required" />
+              <!-- Sleep between each action -->
+              <xs:attribute name="Sleep" type="xs:integer" use="optional" />
+            </xs:complexType>
+          </xs:element>
+
+          <xs:element name="FolderDelete">
+            <xs:complexType>
+              <xs:sequence>
+                <!-- List of supported folders can be found in http://msdn.microsoft.com/en-us/library/office/microsoft.office.interop.outlook.oldefaultfolders%28v=office.15%29.aspx -->
+                <xs:element name="FolderPath" type="xs:string" />
+                <!-- Name of the folder to delete. Folders containing FolderName will be targeted if specified-->
+                <xs:element name="FolderName" type="xs:string" />
+              </xs:sequence>
+              <!-- Unique name for the operation, this will be used as a reference for the sequence file-->
+              <xs:attribute name="OperationName" type="xs:string" use="required" />
+              <!-- Number of folder to delete. If Count is a non-zero value, it will delete the specified number
+              of folders (in order). If Count is 0, it will delete a random number of folders. -->
+              <xs:attribute name="Count" type="xs:string" use="required" />
+              <!-- Sleep between each action -->
+              <xs:attribute name="Sleep" type="xs:integer" use="optional" />
+            </xs:complexType>
+          </xs:element>
+
+          <xs:element name="EventMonitor">
+            <xs:complexType>
+              <xs:sequence>
+                <!-- List of supported folders can be found in http://msdn.microsoft.com/en-us/library/office/microsoft.office.interop.outlook.oldefaultfolders%28v=office.15%29.aspx -->
+                <xs:element name="Folder" type="xs:string" />
+              </xs:sequence>
+              <!-- Unique name for the operation, this will be used as a reference for the sequence file-->
+              <xs:attribute name="OperationName" type="xs:string" use="required" />
+              <xs:attribute name="Sleep" type="xs:integer" use="optional" />
+            </xs:complexType>
+          </xs:element>
+        </xs:choice>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+</xs:schema>

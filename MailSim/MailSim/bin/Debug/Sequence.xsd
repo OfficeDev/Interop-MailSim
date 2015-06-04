@@ -1,0 +1,37 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="MailSimSequence">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" name="OperationGroup">
+          <xs:complexType>
+            <xs:sequence>
+              <xs:element maxOccurs="unbounded" name="Task">
+                <xs:complexType>
+                  <!-- Specifies the name corresponding to the operation in the OperationFile-->
+                  <xs:attribute name="Name" type="xs:string" use="required" />
+                  <!-- Specifies the number of iterations to run for this operation, default is to run this 1 time if this attribute is omitted-->
+                  <xs:attribute name="Iterations" type="xs:integer" use="optional" />
+                  <!-- Specifies the number of seconds to sleep after this operation-->
+                  <xs:attribute name="Sleep" type="xs:integer" use="optional" />
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+            <!-- Specifies the name of the OperationGroup-->
+            <xs:attribute name="Name" type="xs:string" use="required" />
+            <!-- Specifies the file that contains all the operations-->
+            <xs:attribute name="OperationFile" type="xs:string" use="required" />
+            <!-- Specifies the number of iterations to run for this OperationGroup-->
+            <xs:attribute name="Iterations" type="xs:integer" use="optional" />
+            <!-- Specifies number of seconds to sleep after this OperationGroup is run-->
+            <xs:attribute name="Sleep" type="xs:integer" use="optional" />
+          </xs:complexType>
+        </xs:element>
+      </xs:sequence>
+      <!-- Specifies the location for storing the log file-->
+      <xs:attribute name="LogFileLocation" type="xs:string" use="optional" />
+      <!-- Specifies whether to turn off Outlook security prompt-->
+      <xs:attribute name="DisableOutlookPrompt" type="xs:boolean" use="optional" />
+    </xs:complexType>
+  </xs:element>
+</xs:schema>
