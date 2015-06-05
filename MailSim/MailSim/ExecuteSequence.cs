@@ -500,9 +500,11 @@ namespace MailSim
                     indexToReply = random ? randomNum.Next(0, mails.Count - 1) : count - 1;
                     mailToReply = mails[indexToReply].Reply(operation.ReplyAll);
 
-                    mailToReply.Body = System.DateTime.Now.ToString() + " - ";
                     Log.Out(Log.Severity.Info, operation.OperationName, "Subject: {0}", mailToReply.Subject);
-                    mailToReply.Body += (string.IsNullOrEmpty(operation.ReplyBody)) ? DefaultBody : operation.ReplyBody;
+
+                    mailToReply.Body = System.DateTime.Now.ToString() + " - " +
+                        ((string.IsNullOrEmpty(operation.ReplyBody)) ? DefaultBody : operation.ReplyBody) +
+                        mailToReply.Body;
                     Log.Out(Log.Severity.Info, operation.OperationName, "Body: {0}", mailToReply.Body);
 
                     // process the attachment
@@ -596,9 +598,11 @@ namespace MailSim
                     indexToForward = random ? randomNum.Next(0, mails.Count - 1) : count - 1;
                     mailToForward = mails[indexToForward].Forward();
 
-                    mailToForward.Body = System.DateTime.Now.ToString() + " - ";
                     Log.Out(Log.Severity.Info, operation.OperationName, "Subject: {0}", mailToForward.Subject);
-                    mailToForward.Body += (string.IsNullOrEmpty(operation.ForwardBody)) ? DefaultBody : operation.ForwardBody;
+
+                    mailToForward.Body = System.DateTime.Now.ToString() + " - " +
+                        ((string.IsNullOrEmpty(operation.ForwardBody)) ? DefaultBody : operation.ForwardBody) +
+                        mailToForward.Body;
                     Log.Out(Log.Severity.Info, operation.OperationName, "Body: {0}", mailToForward.Body);
 
                     // adds all recipients
@@ -1181,23 +1185,12 @@ namespace MailSim
             }
 
             // finds all mail items with matching subject if specified
-            if (string.IsNullOrEmpty(subject))
+            mails = FindMailWithSubject(folderItems, subject);
+            if (mails.Count == 0)
             {
-                mails = FindMailWithSubject(folderItems, subject);
-                if (mails.Count == 0)
-                {
-                    Log.Out(Log.Severity.Error, operationName, "Unable to find mail with subject {0}",
-                        subject);
-                    return null;
-                }
-            }
-            // if no subject is specified, then simply copy all the mails to the list
-            else
-            {
-                foreach (MailItem item in folderItems)
-                {
-                    mails.Add(item);
-                }
+                Log.Out(Log.Severity.Error, operationName, "Unable to find mail with subject {0}",
+                    subject);
+                return null;
             }
 
             return mails;
