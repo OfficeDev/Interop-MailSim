@@ -50,10 +50,10 @@ namespace MailSim.OL
                 Outlook.NameSpace nameSpace = _outlook.GetNamespace("MAPI");
                 Outlook.Folder mailFolder = (Outlook.Folder)nameSpace.GetDefaultFolder(Outlook.OlDefaultFolders.olFolderInbox);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 Log.Out(Log.Severity.Error, "Connection", "Error encountered during Outlook connection");
-                throw ex;
+                throw;
             }
         }
 

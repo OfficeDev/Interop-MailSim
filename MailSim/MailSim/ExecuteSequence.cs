@@ -68,10 +68,10 @@ namespace MailSim
                     // initializes a random number
                     randomNum = new Random();
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     Log.Out(Log.Severity.Error, "Execute", "Error encountered during initialization");
-                    throw ex;
+                    throw;
                 }
             }
         }
