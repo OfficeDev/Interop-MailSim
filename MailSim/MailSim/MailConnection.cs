@@ -23,7 +23,7 @@ namespace MailSim.OL
     public class MailConnection
     {
         #region Private Variables
-        private Outlook.Application _outlook;
+        private Outlook._Application _outlook;
         private bool _keepOutlookRunning = false;
         #endregion
 

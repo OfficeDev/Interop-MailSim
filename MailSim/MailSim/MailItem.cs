@@ -8,7 +8,7 @@ namespace MailSim.OL
 {
     public class MailItem
     {
-        private Outlook.MailItem _mailitem;
+        private Outlook._MailItem _mailitem;
 
         /// <summary>
         /// Constructor
@@ -173,7 +173,7 @@ namespace MailSim.OL
         {
             get
             {
-                return _mailitem;
+                return (Outlook.MailItem) _mailitem;
             }
         }
     }
