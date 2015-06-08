@@ -400,7 +400,7 @@ namespace MailSim
                 if (iterations == 0)
                 {
                     random = true;
-                    iterations = randomNum.Next(1, mails.Count);
+                    iterations = randomNum.Next(1, mails.Count + 1);
                     Log.Out(Log.Severity.Info, operation.OperationName, "Randomly deleting {0} emails", iterations);
                 }
 
@@ -420,7 +420,7 @@ namespace MailSim
 
                     // just delete the email in order if random is not selected,
                     // otherwise randomly pick the mail to delete
-                    indexToDelete = random ? randomNum.Next(0, mails.Count - 1) : mails.Count - 1;
+                    indexToDelete = random ? randomNum.Next(0, mails.Count) : mails.Count - 1;
 
                     Log.Out(Log.Severity.Info, operation.OperationName, "Deleting email with subject: {0}", mails[indexToDelete].Subject);
                     mails[indexToDelete].Delete();
@@ -474,7 +474,7 @@ namespace MailSim
                 if (iterations == 0)
                 {
                     random = true;
-                    iterations = randomNum.Next(1, mails.Count);
+                    iterations = randomNum.Next(1, mails.Count + 1);
                     Log.Out(Log.Severity.Info, operation.OperationName, "Randomly replying {0} emails", iterations);
                 }
 
@@ -497,7 +497,7 @@ namespace MailSim
 
                     // just reply the email in order if random is not selected,
                     // otherwise randomly pick the mail to reply
-                    indexToReply = random ? randomNum.Next(0, mails.Count - 1) : count - 1;
+                    indexToReply = random ? randomNum.Next(0, mails.Count) : count - 1;
                     mailToReply = mails[indexToReply].Reply(operation.ReplyAll);
 
                     Log.Out(Log.Severity.Info, operation.OperationName, "Subject: {0}", mailToReply.Subject);
@@ -564,7 +564,7 @@ namespace MailSim
                 if (iterations == 0)
                 {
                     random = true;
-                    iterations = randomNum.Next(1, mails.Count);
+                    iterations = randomNum.Next(1, mails.Count + 1);
                     Log.Out(Log.Severity.Info, operation.OperationName, "Randomly forwarding {0} emails", iterations);
                 }
 
@@ -595,7 +595,7 @@ namespace MailSim
 
                     // just forward the email in order if random is not selected,
                     // otherwise randomly pick the mail to forward
-                    indexToForward = random ? randomNum.Next(0, mails.Count - 1) : count - 1;
+                    indexToForward = random ? randomNum.Next(0, mails.Count) : count - 1;
                     mailToForward = mails[indexToForward].Forward();
 
                     Log.Out(Log.Severity.Info, operation.OperationName, "Subject: {0}", mailToForward.Subject);
@@ -669,7 +669,7 @@ namespace MailSim
                 if (iterations == 0)
                 {
                     random = true;
-                    iterations = randomNum.Next(1, mails.Count);
+                    iterations = randomNum.Next(1, mails.Count + 1);
                     Log.Out(Log.Severity.Info, operation.OperationName, "Randomly moving {0} emails", iterations);
                 }
 
@@ -698,7 +698,7 @@ namespace MailSim
 
                     // just copy the email in order if random is not selected,
                     // otherwise randomly pick the mail to copy
-                    indexToCopy = random ? randomNum.Next(0, mails.Count - 1) : mails.Count - 1;
+                    indexToCopy = random ? randomNum.Next(0, mails.Count) : mails.Count - 1;
                     Log.Out(Log.Severity.Info, operation.OperationName, "Move to {0}: {1}",
                         operation.DestinationFolder, mails[indexToCopy].Subject);
 
@@ -750,7 +750,7 @@ namespace MailSim
                 // randomly generate the number of folders to create 
                 if (iterations == 0)
                 {
-                    iterations = randomNum.Next(1, MaxNumberOfRandomFolder);
+                    iterations = randomNum.Next(1, MaxNumberOfRandomFolder + 1);
                     Log.Out(Log.Severity.Info, operation.OperationName, "Randomly creating {0} folders", iterations);
                 }
 
@@ -818,7 +818,7 @@ namespace MailSim
                 if (iterations == 0)
                 {
                     random = true;
-                    iterations = randomNum.Next(1, subFolders.Count);
+                    iterations = randomNum.Next(1, subFolders.Count + 1);
                     Log.Out(Log.Severity.Info, operation.OperationName, "Randomly deleting {0} folders", iterations);
                 }
                 else if (iterations > subFolders.Count)
@@ -833,7 +833,7 @@ namespace MailSim
                 {
                     Log.Out(Log.Severity.Info, operation.OperationName, "Starting iteration {0}", count);
 
-                    indexToDelete = random ? randomNum.Next(0, subFolders.Count - 1) : subFolders.Count - 1;
+                    indexToDelete = random ? randomNum.Next(0, subFolders.Count) : subFolders.Count - 1;
 
                     // deletes the folder and remove it from the saved list
                     Log.Out(Log.Severity.Info, operation.OperationName, "Deleting folder: {0}", subFolders[indexToDelete].Name);
@@ -1029,14 +1029,14 @@ namespace MailSim
 
                     if (galUsers == null || galUsers.Count == 0)
                     {
-                        throw new ArgumentException("No user in the GAL");
+                        throw new ArgumentException("There is no user in the GAL that matches the recipient criteria");
                     }
 
                     // randomly generate the number of recipients if specified
                     if (randomCount == 0)
                     {
                         // gets the number of users in GAL
-                        randomCount = randomNum.Next(1, galUsers.Count);
+                        randomCount = randomNum.Next(1, galUsers.Count + 1);
                         Log.Out(Log.Severity.Info, name, "Randomly selecting {0} recipients", randomCount);
                     }
 
@@ -1051,7 +1051,7 @@ namespace MailSim
                     int recipientNumber;
                     for (int count = 0; count < randomCount; count++)
                     {
-                        recipientNumber = randomNum.Next(0, galUsers.Count - 1);
+                        recipientNumber = randomNum.Next(0, galUsers.Count);
                         recipients.Add(galUsers[recipientNumber]);
                         galUsers.RemoveAt(recipientNumber);
                     }
@@ -1112,7 +1112,7 @@ namespace MailSim
                 // if Count is 0, it will attach a random number of attachments
                 if (randCount == 0)
                 {
-                    randCount = randomNum.Next(0, files.Length - 1);
+                    randCount = randomNum.Next(0, files.Length);
                     Log.Out(Log.Severity.Info, name, "Randomly selecting {0} attachments", randCount);
                 }
 
@@ -1126,7 +1126,7 @@ namespace MailSim
 
                 for (int counter = 0; counter < randCount; counter++)
                 {
-                    fileNumber = randomNum.Next(0, files.Length - 1);
+                    fileNumber = randomNum.Next(0, files.Length);
                     attachments.Add(files[fileNumber]);
                 }
             }
