@@ -9,9 +9,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 // declare use of the below to get Outllok wrapper classes (a.k.a. Mail*)
 using MailSim.OL;
 
