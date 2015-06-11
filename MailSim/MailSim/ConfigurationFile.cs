@@ -57,7 +57,6 @@ namespace MailSim
                 using (XmlReader seqReader = XmlReader.Create(sequenceFile))
                 {
                     sequence = (MailSimSequence)seqSer.Deserialize(seqReader);
-                    seqReader.Close();
                 }
             }
             catch (Exception ex)
@@ -108,7 +107,6 @@ namespace MailSim
                 using (XmlReader opReader = XmlReader.Create(opFile))
                 {
                     operations = (MailSimOperations)opSer.Deserialize(opReader);
-                    opReader.Close();
                 }
 
             }

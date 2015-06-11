@@ -9,9 +9,9 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Xml;
+using System.Xml.Linq;
 using System.Diagnostics;
 using System.Threading.Tasks;
 
@@ -89,7 +89,7 @@ namespace MailSim
 
 
         /// <summary>
-        /// This method 
+        /// This method displays the message to the console and also writes it to the log file
         /// </summary>
         /// <param name="type">Severity of the message</param>
         /// <param name="name">name of the task/process</param>
@@ -108,33 +108,24 @@ namespace MailSim
                     break;
             }
 
-            // write to the console
+            // writes to the console
             Console.WriteLine(System.DateTime.Now + " " + type.ToString() + "\t: " + 
                 name + "\t: " + format, args);
 
             Console.ResetColor();
 
-            // write to the log file
+            // writes to the log file
             if (!string.IsNullOrEmpty(logFileName))
             {
-                StringBuilder sBuilder = new StringBuilder();
-                using (StringWriter sWriter = new StringWriter(sBuilder))
+                using (StreamWriter sWriter = File.AppendText(logFileName))
                 {
-                    using (XmlTextWriter xmlWriter = new XmlTextWriter(sWriter))
-                    {
-                        xmlWriter.WriteStartElement(type.ToString());
-                        xmlWriter.WriteAttributeString("Name", name);
-                        xmlWriter.WriteAttributeString("Time", System.DateTime.Now.ToString());
-                        xmlWriter.WriteElementString("Detail", String.Format(format, args));
-                        xmlWriter.WriteEndElement();
-                    }
-                }
-                using (StreamWriter sWriter = new StreamWriter(logFileName, true, Encoding.UTF8))
-                {
-                    sWriter.WriteLine(sBuilder.ToString());
+                    XElement element = new XElement(type.ToString(),
+                        new XAttribute("Name", name),
+                        new XAttribute("Time", System.DateTime.Now.ToString()),
+                        new XElement("Detail", String.Format(format, args)));
+                    sWriter.WriteLine(element.ToString());                       
                 }
             }
         }
-        
     }
 }
