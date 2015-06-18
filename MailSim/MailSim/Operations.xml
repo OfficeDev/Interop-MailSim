@@ -39,20 +39,54 @@
     <RandomAttachments Count="0">C:\SW\MailSimRun</RandomAttachments>
   </MailForward>
   
-  <MailMove OperationName="MailMoveToJunk" Count="1">
-    <SourceFolder>olFolderInbox</SourceFolder>
+  <MailSend OperationName="MailSend1" Sleep="10">
+    <Recipients>pui@ointerop.onmicrosoft.com</Recipients>
+    <Recipients>michael@ointerop.onmicrosoft.com</Recipients>
+    <Subject>Test</Subject>
+    <Body>Test message body</Body>
+    <Attachment>C:\Users\puleung\Desktop\New folder\Log.cs</Attachment>
+    <Attachment>C:\Users\puleung\Desktop\New folder\Operations.xml</Attachment>
+  </MailSend>
+
+  <MailSend OperationName="MailSend2">
+    <RandomRecipients DistributionList="MailSim Users">2</RandomRecipients>
+    <RandomAttachments Count="2">C:\Users\puleung\Desktop\New folder</RandomAttachments>
+  </MailSend>
+
+  <MailSend OperationName="MailSend3" Sleep="10">
+    <Recipients>pui@ointerop.onmicrosoft.com</Recipients>
+  </MailSend>
+
+  <MailDelete OperationName="MailDelete1" Count="5">
+    <Folder>olFolderSentMail</Folder>
+  </MailDelete>
+
+  <MailReply OperationName="MailReply1" ReplyAll="true" Count="1">
+    <Folder>olFolderSentMail</Folder>
+    <RandomAttachments Count="0">C:\Users\puleung\Desktop\New folder</RandomAttachments>
+  </MailReply>
+
+  <MailForward OperationName="MailForward1" Count="0">
+    <Folder>olFolderSentMail</Folder>
+    <RandomRecipients DistributionList="">0</RandomRecipients>
+    <MailSubjectToForward>subject</MailSubjectToForward>
+    <RandomAttachments Count="0">C:\Users\puleung\Desktop\New folder</RandomAttachments>
+  </MailForward>
+
+  <MailMove OperationName="MailMove1" Count="1">
+    <SourceFolder>olFolderSentMail</SourceFolder>
     <DestinationFolder>olFolderJunk</DestinationFolder>
     <Subject>subject</Subject>
   </MailMove>
 
   <FolderCreate OperationName="FolderCreate" Count="2" Sleep="1">
     <FolderPath>olFolderInbox</FolderPath>
-    <FolderName>Test Folder</FolderName>
+    <FolderName>pui test test</FolderName>
   </FolderCreate>
 
   <FolderDelete OperationName="FolderDelete" Count="2" Sleep="3">
     <FolderPath>olFolderInbox</FolderPath>
-    <FolderName>Test Folder</FolderName>
+    <FolderName>pui test</FolderName>
   </FolderDelete>
 
   <EventMonitor OperationName="EventMonitor" Sleep="5">
