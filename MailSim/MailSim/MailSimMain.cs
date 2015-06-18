@@ -29,7 +29,7 @@ namespace MailSim
                 {
                     MailSimTest testClass = new MailSimTest();
                     testClass.Execute(args);
-                    Log.Out(Log.Severity.Info, "", "Hit any key to quit");
+                    Log.Out(Log.Severity.Info, "", "Press any key to quit");
                     Console.Read();
                     return;
                 }
@@ -44,7 +44,7 @@ namespace MailSim
 
             if (!File.Exists(args[0]))
             {
-                Log.Out(Log.Severity.Error, "", "Invalid parameter, file doesn't exist");
+                Log.Out(Log.Severity.Error, "", "Invalid parameter, file does not exist");
                 PrintUsage();
                 return;
             }
@@ -66,7 +66,7 @@ namespace MailSim
 
                 if (seq == null)
                 {
-                    Log.Out(Log.Severity.Error, Process.GetCurrentProcess().ProcessName, "Unable to load sequence file {0}", args[0]);
+                    Log.Out(Log.Severity.Error, Process.GetCurrentProcess().ProcessName, "Unable to load sequence XML file {0}", args[0]);
                     return;
                 }
 
@@ -94,9 +94,9 @@ namespace MailSim
         {
             string binName = Process.GetCurrentProcess().ProcessName;
 
-            Log.Out(Log.Severity.Info, binName, "{0} connects with Outlook and carry out operations described in the input XML file", binName);
+            Log.Out(Log.Severity.Info, binName, "{0} connects with Outlook and runs operations described in the input XML file", binName);
             Log.Out(Log.Severity.Info, binName, "Usage: {0} Sequence.xml", binName);
-            Log.Out(Log.Severity.Info, binName, "   Sequence.xml: an xml file that specifies the sequence of operation, refer to sequence.xsd for its structure");
+            Log.Out(Log.Severity.Info, binName, "   Sequence.xml: an XML file that specifies the sequence of an operation. Refer to the Sequence.xsd for its structure");
         }
     }
 }

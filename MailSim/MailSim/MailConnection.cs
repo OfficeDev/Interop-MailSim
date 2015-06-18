@@ -35,14 +35,14 @@ namespace MailSim.OL
             {
                 if (Process.GetProcessesByName("OUTLOOK").Count() > 0)
                 {
-                    Log.Out(Log.Severity.Info, "Connection", "Connecting to existing Outlook instance");
+                    Log.Out(Log.Severity.Info, "Connection", "Connecting to an existing Outlook instance");
                     _outlook = Marshal.GetActiveObject("Outlook.Application") as Outlook.Application;
                     _keepOutlookRunning = true;
                     return;
                 }
 
-                // Creates a new instance of Outlook and log on to the specified profile.
-                Log.Out(Log.Severity.Info, "Connection", "Starting new Outlook session");
+                // Creates a new instance of Outlook and logs on to the specified profile.
+                Log.Out(Log.Severity.Info, "Connection", "Starting a new Outlook session");
 
                 _outlook = new Outlook.Application();
                 Outlook.NameSpace nameSpace = _outlook.GetNamespace("MAPI");
@@ -50,7 +50,7 @@ namespace MailSim.OL
             }
             catch (Exception)
             {
-                Log.Out(Log.Severity.Error, "Connection", "Error encountered during Outlook connection");
+                Log.Out(Log.Severity.Error, "Connection", "Error encountered when connecting to Outlook ");
                 throw;
             }
         }

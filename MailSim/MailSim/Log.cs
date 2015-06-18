@@ -59,7 +59,7 @@ namespace MailSim
                 if (!Directory.Exists(fileLocation))
                 {
                     Out(Severity.Error, "Log", "Log file directory {0} doesn't exist", fileLocation);
-                    throw new ArgumentException("Log file directory in sequence file does not exist");
+                    throw new ArgumentException("Log file directory in the sequence XML file does not exist");
                 }
 
                 logFileLocation = fileLocation;
