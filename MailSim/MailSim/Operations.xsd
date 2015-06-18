@@ -173,8 +173,8 @@
               </xs:sequence>
               <!-- Unique name for the operation, this will be used as a reference for the sequence file-->
               <xs:attribute name="OperationName" type="xs:string" use="required" />
-              <!-- Number of emails to copy. If Count is a non-zero value, it will copy the specified number
-              of emails (in order). If Count is 0, it will copy a random number of emails. -->
+              <!-- Number of emails to move. If Count is a non-zero value, it will move the specified number
+              of emails (in order). If Count is 0, it will move a random number of emails. -->
                <xs:attribute name="Count" type="xs:integer" use="required" />
               <!-- Sleep between each action -->
               <xs:attribute name="Sleep" type="xs:integer" use="optional" />

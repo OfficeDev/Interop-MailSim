@@ -9,8 +9,6 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Xml;
 using Microsoft.Win32;
@@ -53,7 +51,7 @@ namespace MailSim
                 {
                     sequence = seq;
 
-                    // disables the Outlook security prompt if specified
+                    // Disables the Outlook security prompt if specified
                     if (sequence.DisableOutlookPrompt == true)
                     {
                         ConfigOutlookPrompts(false);
@@ -62,15 +60,15 @@ namespace MailSim
                     // Openes connection to Outlook with default profile, starts Outlook if it is not running
                     olConnection = new MailConnection();
 
-                    // note: we are only supporting the default Mail Store right now
+                    // Note: Currently only the default MailStore is supported.
                     olMailStore = olConnection.GetDefaultStore();
 
-                    // initializes a random number
+                    // Initializes a random number
                     randomNum = new Random();
                 }
                 catch (Exception)
                 {
-                    Log.Out(Log.Severity.Error, "Execute", "Error encountered during initialization");
+                    Log.Out(Log.Severity.Error, "Run", "Error encountered during initialization");
                     throw;
                 }
             }
@@ -85,7 +83,7 @@ namespace MailSim
             if (sequence == null)
                 return;
 
-            // restore the Outlook prompt if needed
+            // Restore the Outlook prompt if needed 
             if (sequence.DisableOutlookPrompt == true)
             {
                 ConfigOutlookPrompts(true);
@@ -98,7 +96,7 @@ namespace MailSim
         /// </summary>
         public void CleanupAfterIteration()
         {
-            // unregisters all registered folder event 
+            // Unregisters all registered folder events 
             foreach (MailFolder folder in FolderEventList)
             {
                 RegisterFolderEvent("Event", folder, false);
@@ -120,13 +118,13 @@ namespace MailSim
                 return;
             }
 
-            // registers to monitor the Inbox
+            // Registers to monitor the Inbox
             MailSimOperationsEventMonitor inboxEvent = new MailSimOperationsEventMonitor();
             inboxEvent.Folder = "olFolderInbox";
             inboxEvent.OperationName = "DefaultInboxMonitor";
             EventMonitor(inboxEvent);
 
-            // process each operation group
+            // Run each operation group
             foreach (MailSimSequenceOperationGroup group in sequence.OperationGroup)
             {
                 int iterations = 1;
@@ -135,7 +133,7 @@ namespace MailSim
                     iterations = Convert.ToInt32(group.Iterations);
                 }
 
-                // processes the operations file
+                // Run the operations file
                 operations = ConfigurationFile.LoadOperationFile(group.OperationFile, out operationXML);
 
                 if (operations == null)
@@ -153,7 +151,7 @@ namespace MailSim
                         ProcessTask(task);
                     }
 
-                    Log.Out(Log.Severity.Info, group.Name, "Finished group run {0}", count);
+                    Log.Out(Log.Severity.Info, group.Name, "Completed group task run {0}", count);
 
                     if (!string.IsNullOrEmpty(group.Sleep))
                     {
@@ -171,10 +169,10 @@ namespace MailSim
 
 
         /// <summary>
-        /// This method processes each task of the OperationGroup, hanlding the iteration and sleep
+        /// This method runs each task of the OperationGroup, handling the iteration and sleep elements.
         /// </summary>
-        /// <param name="task">task to process</param>
-        /// <returns>true if processed successfully, false otherwise</returns>
+        /// <param name="task">task to run</param>
+        /// <returns>Returns true if successful, otherwise returns false </returns>
         public void ProcessTask(MailSimSequenceOperationGroupTask task)
         {
             int iterations = 1;
@@ -186,15 +184,15 @@ namespace MailSim
 
             for (int count = 1; count <= iterations; count++)
             {
-                Log.Out(Log.Severity.Info, task.Name, "Processing task run {0}", count);
+                Log.Out(Log.Severity.Info, task.Name, "Running task {0}", count);
 
                 if (ExecuteTask(task.Name))
                 {
-                    Log.Out(Log.Severity.Info, task.Name, "Finished processing task run {0}", count);
+                    Log.Out(Log.Severity.Info, task.Name, "Completed task run {0}", count);
                 }
                 else
                 {
-                    Log.Out(Log.Severity.Error, task.Name, "Failed processing task");
+                    Log.Out(Log.Severity.Error, task.Name, "Failed to run task");
                 }
 
                 if (!string.IsNullOrEmpty(task.Sleep))
@@ -208,13 +206,13 @@ namespace MailSim
 
 
         /// <summary>
-        /// This method determines and calls the appropiate method to execute the task
+        /// This method determines and calls the appropriate method to run the task
         /// </summary>
         /// <param name="taskName">name of the task</param>
-        /// <returns>true if processed successfully, false otherwise</returns>
+        /// <returns>Returns true if successful, otherwise returns false </returns>
         public bool ExecuteTask(string taskName)
         {
-            // locates the actual operation using the name
+            // Locates the actual operation using the name
             XmlNodeList opNodes = operationXML.SelectNodes("//MailSimOperations/*[@OperationName='" + taskName + "']");
 
             // we expect only 1 operation node matching the name
@@ -228,7 +226,7 @@ namespace MailSim
 
             foreach (object operation in operations.Items)
             {
-                // determine the right operation for the task
+                // Determine the right operation for the task
                 if (operation.GetType() == typeof(MailSimOperationsMailSend))
                 {
                     if (((MailSimOperationsMailSend)operation).OperationName == taskName)
@@ -291,13 +289,13 @@ namespace MailSim
                 }
             }
 
-            Log.Out(Log.Severity.Error, taskName, "Unable to find matching task, skipping task");
+            Log.Out(Log.Severity.Error, taskName, "Unable to find matching task; skipping task");
             return false;
         }
 
 
         /// <summary>
-        /// This method sends mail according to the paramenter
+        /// This method sends mail according to the parameter
         /// </summary>
         /// <param name="operation">parameters for MailSend</param>
         /// <returns>true if processed successfully, false otherwise</returns>
@@ -321,7 +319,7 @@ namespace MailSim
 
                 if (recipients == null)
                 {
-                    Log.Out(Log.Severity.Error, operation.OperationName, "Recipient is not specified, skipping operation");
+                    Log.Out(Log.Severity.Error, operation.OperationName, "Recipient is not specified, skipping the operation");
                     return false;
                 }
 
@@ -338,7 +336,7 @@ namespace MailSim
                     mail.Body += (string.IsNullOrEmpty(operation.Body)) ? DefaultBody : operation.Body;
                     Log.Out(Log.Severity.Info, operation.OperationName, "Body: {0}", mail.Body);
 
-                    // adds all recipients
+                    // Adds all recipients
                     foreach (string recpt in recipients)
                     {
                         Log.Out(Log.Severity.Info, operation.OperationName, "Recipient: {0}", recpt);
@@ -373,7 +371,7 @@ namespace MailSim
 
 
         /// <summary>
-        /// This method deletes mail according to the paramenter
+        /// This method deletes mail according to the parameter 
         /// </summary>
         /// <param name="operation">parameters for MailDelete</param>
         /// <returns>true if processed successfully, false otherwise</returns>
@@ -388,7 +386,7 @@ namespace MailSim
 
             try
             {
-                // retrieves mails from Outlook
+                // Retrieves mails from Outlook
                 List<MailItem> mails = GetMails(operation.OperationName, operation.Folder, operation.Subject);
                 if (mails == null || mails.Count == 0)
                 {
@@ -396,11 +394,11 @@ namespace MailSim
                     return false;
                 }
 
-                // randomly generate the number of emails to delete 
+                // Randomly generate the number of emails to delete 
                 if (iterations == 0)
                 {
                     random = true;
-                    iterations = randomNum.Next(1, mails.Count);
+                    iterations = randomNum.Next(1, mails.Count + 1);
                     Log.Out(Log.Severity.Info, operation.OperationName, "Randomly deleting {0} emails", iterations);
                 }
 
@@ -408,7 +406,7 @@ namespace MailSim
                 if (iterations > mails.Count)
                 {
                     Log.Out(Log.Severity.Warning, operation.OperationName,
-                        "Only {0} email(s) in the folder, adjusting the number of emails to delete from {0} to {1}",
+                        "Only {0} email(s) are in the folder, so the number of emails to delete is adjusted from {0} to {1}",
                         iterations, mails.Count);
                     iterations = mails.Count;
                 }
@@ -420,7 +418,7 @@ namespace MailSim
 
                     // just delete the email in order if random is not selected,
                     // otherwise randomly pick the mail to delete
-                    indexToDelete = random ? randomNum.Next(0, mails.Count - 1) : mails.Count - 1;
+                    indexToDelete = random ? randomNum.Next(0, mails.Count) : mails.Count - 1;
 
                     Log.Out(Log.Severity.Info, operation.OperationName, "Deleting email with subject: {0}", mails[indexToDelete].Subject);
                     mails[indexToDelete].Delete();
@@ -474,7 +472,7 @@ namespace MailSim
                 if (iterations == 0)
                 {
                     random = true;
-                    iterations = randomNum.Next(1, mails.Count);
+                    iterations = randomNum.Next(1, mails.Count + 1);
                     Log.Out(Log.Severity.Info, operation.OperationName, "Randomly replying {0} emails", iterations);
                 }
 
@@ -482,7 +480,7 @@ namespace MailSim
                 if (iterations > mails.Count)
                 {
                     Log.Out(Log.Severity.Warning, operation.OperationName,
-                        "Only {0} email(s) in the folder, adjusting the number of emails to reply from {0} to {1}",
+                        "Only {0} email(s) are in the folder, so the number of emails to reply is adjusted from {0} to {1}",
                         iterations, mails.Count);
                     iterations = mails.Count;
                 }
@@ -497,7 +495,7 @@ namespace MailSim
 
                     // just reply the email in order if random is not selected,
                     // otherwise randomly pick the mail to reply
-                    indexToReply = random ? randomNum.Next(0, mails.Count - 1) : count - 1;
+                    indexToReply = random ? randomNum.Next(0, mails.Count) : count - 1;
                     mailToReply = mails[indexToReply].Reply(operation.ReplyAll);
 
                     Log.Out(Log.Severity.Info, operation.OperationName, "Subject: {0}", mailToReply.Subject);
@@ -539,7 +537,7 @@ namespace MailSim
         /// <summary>
         /// This method forwards emails according to the parameters
         /// </summary>
-        /// <param name="operation">arguement for MailForward</param>
+        /// <param name="operation">argument for MailForward</param>
         /// <returns>true if processed successfully, false otherwise</returns>
         private bool MailForward(MailSimOperationsMailForward operation)
         {
@@ -560,11 +558,11 @@ namespace MailSim
                     return false;
                 }
 
-                // randomly generate the number of emails to forward 
+                // randomly generates the number of emails to forward 
                 if (iterations == 0)
                 {
                     random = true;
-                    iterations = randomNum.Next(1, mails.Count);
+                    iterations = randomNum.Next(1, mails.Count + 1);
                     Log.Out(Log.Severity.Info, operation.OperationName, "Randomly forwarding {0} emails", iterations);
                 }
 
@@ -572,7 +570,7 @@ namespace MailSim
                 if (iterations > mails.Count)
                 {
                     Log.Out(Log.Severity.Warning, operation.OperationName,
-                        "Only {0} email(s) in the folder, adjusting the number of emails to forward from {0} to {1}",
+                        "Only {0} email(s) are in the folder, so the the number of emails to forward is adjusted from {0} to {1}",
                         iterations, mails.Count);
                     iterations = mails.Count;
                 }
@@ -595,7 +593,7 @@ namespace MailSim
 
                     // just forward the email in order if random is not selected,
                     // otherwise randomly pick the mail to forward
-                    indexToForward = random ? randomNum.Next(0, mails.Count - 1) : count - 1;
+                    indexToForward = random ? randomNum.Next(0, mails.Count) : count - 1;
                     mailToForward = mails[indexToForward].Forward();
 
                     Log.Out(Log.Severity.Info, operation.OperationName, "Subject: {0}", mailToForward.Subject);
@@ -644,7 +642,7 @@ namespace MailSim
         /// <summary>
         /// This method moves emails according to the parameters
         /// </summary>
-        /// <param name="operation">arguement for MaiMove</param>
+        /// <param name="operation">argument for MaiMove</param>
         /// <returns>true if processed successfully, false otherwise</returns>
         private bool MailMove(MailSimOperationsMailMove operation)
         {
@@ -665,11 +663,11 @@ namespace MailSim
                     return false;
                 }
 
-                // randomly generate the number of emails to forward 
+                // randomly generates the number of emails to forward 
                 if (iterations == 0)
                 {
                     random = true;
-                    iterations = randomNum.Next(1, mails.Count);
+                    iterations = randomNum.Next(1, mails.Count + 1);
                     Log.Out(Log.Severity.Info, operation.OperationName, "Randomly moving {0} emails", iterations);
                 }
 
@@ -677,7 +675,7 @@ namespace MailSim
                 if (iterations > mails.Count)
                 {
                     Log.Out(Log.Severity.Warning, operation.OperationName,
-                        "Only {0} email(s) in the folder, adjusting the number of emails to move from {0} to {1}",
+                        "Only {0} email(s) are in the folder, so the number of emails to move is adjusted from {0} to {1}",
                         iterations, mails.Count);
                     iterations = mails.Count;
                 }
@@ -698,7 +696,7 @@ namespace MailSim
 
                     // just copy the email in order if random is not selected,
                     // otherwise randomly pick the mail to copy
-                    indexToCopy = random ? randomNum.Next(0, mails.Count - 1) : mails.Count - 1;
+                    indexToCopy = random ? randomNum.Next(0, mails.Count) : mails.Count - 1;
                     Log.Out(Log.Severity.Info, operation.OperationName, "Move to {0}: {1}",
                         operation.DestinationFolder, mails[indexToCopy].Subject);
 
@@ -750,7 +748,7 @@ namespace MailSim
                 // randomly generate the number of folders to create 
                 if (iterations == 0)
                 {
-                    iterations = randomNum.Next(1, MaxNumberOfRandomFolder);
+                    iterations = randomNum.Next(1, MaxNumberOfRandomFolder + 1);
                     Log.Out(Log.Severity.Info, operation.OperationName, "Randomly creating {0} folders", iterations);
                 }
 
@@ -818,7 +816,7 @@ namespace MailSim
                 if (iterations == 0)
                 {
                     random = true;
-                    iterations = randomNum.Next(1, subFolders.Count);
+                    iterations = randomNum.Next(1, subFolders.Count + 1);
                     Log.Out(Log.Severity.Info, operation.OperationName, "Randomly deleting {0} folders", iterations);
                 }
                 else if (iterations > subFolders.Count)
@@ -833,7 +831,7 @@ namespace MailSim
                 {
                     Log.Out(Log.Severity.Info, operation.OperationName, "Starting iteration {0}", count);
 
-                    indexToDelete = random ? randomNum.Next(0, subFolders.Count - 1) : subFolders.Count - 1;
+                    indexToDelete = random ? randomNum.Next(0, subFolders.Count) : subFolders.Count - 1;
 
                     // deletes the folder and remove it from the saved list
                     Log.Out(Log.Severity.Info, operation.OperationName, "Deleting folder: {0}", subFolders[indexToDelete].Name);
@@ -1029,14 +1027,14 @@ namespace MailSim
 
                     if (galUsers == null || galUsers.Count == 0)
                     {
-                        throw new ArgumentException("No user in the GAL");
+                        throw new ArgumentException("There is no user in the GAL that matches the recipient criteria");
                     }
 
                     // randomly generate the number of recipients if specified
                     if (randomCount == 0)
                     {
                         // gets the number of users in GAL
-                        randomCount = randomNum.Next(1, galUsers.Count);
+                        randomCount = randomNum.Next(1, galUsers.Count + 1);
                         Log.Out(Log.Severity.Info, name, "Randomly selecting {0} recipients", randomCount);
                     }
 
@@ -1051,7 +1049,7 @@ namespace MailSim
                     int recipientNumber;
                     for (int count = 0; count < randomCount; count++)
                     {
-                        recipientNumber = randomNum.Next(0, galUsers.Count - 1);
+                        recipientNumber = randomNum.Next(0, galUsers.Count);
                         recipients.Add(galUsers[recipientNumber]);
                         galUsers.RemoveAt(recipientNumber);
                     }
@@ -1112,7 +1110,7 @@ namespace MailSim
                 // if Count is 0, it will attach a random number of attachments
                 if (randCount == 0)
                 {
-                    randCount = randomNum.Next(0, files.Length - 1);
+                    randCount = randomNum.Next(0, files.Length);
                     Log.Out(Log.Severity.Info, name, "Randomly selecting {0} attachments", randCount);
                 }
 
@@ -1126,7 +1124,7 @@ namespace MailSim
 
                 for (int counter = 0; counter < randCount; counter++)
                 {
-                    fileNumber = randomNum.Next(0, files.Length - 1);
+                    fileNumber = randomNum.Next(0, files.Length);
                     attachments.Add(files[fileNumber]);
                 }
             }

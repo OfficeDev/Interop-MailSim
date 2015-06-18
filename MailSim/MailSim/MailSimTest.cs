@@ -9,10 +9,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-// declare use of the below to get Outllok wrapper classes (a.k.a. Mail*)
+// declare use of the below to get Outlook wrapper classes (a.k.a. Mail*)
 using MailSim.OL;
 
 namespace MailSim
@@ -23,7 +20,7 @@ namespace MailSim
         /// Test module, focusing on Outlook (OOM) wrapper classes (Mail*)
         /// Also serves as an example for Mail* classes usage 
         /// </summary>
-        /// <param name="args">Command line argument. It is expected that first argument is aways "/t"</param>
+        /// <param name="args">Command line argument. It is expected that the first argument is always "/t"</param>
         public void Execute(string[] args)
         {
             // Open connection to Outlook with default profile. Will start Outlook if it is not running
@@ -146,7 +143,7 @@ namespace MailSim
             if (newMail.ValidateRecipients)
             {
                 newMail.Send();
-                Console.WriteLine("Mail to matching users sent!");
+                Console.WriteLine("Mail to specified users  sent!");
             }
             else
             {
@@ -172,14 +169,14 @@ namespace MailSim
                 }
                 else
                 {
-                    Console.WriteLine("ERROR: DL not found");
+                    Console.WriteLine("ERROR: Distribution list not found");
                 }
             }
 
             if (newMail.ValidateRecipients)
             {
                 newMail.Send();
-                Console.WriteLine("Mail to DL members sent!");
+                Console.WriteLine("Mail to distribution list members sent!");
             }
             else
             {
@@ -210,15 +207,15 @@ namespace MailSim
                 if (forwardMail.ValidateRecipients)
                 {
                     forwardMail.Send();
-                    Console.WriteLine("Forward mail sent!");
+                    Console.WriteLine("Forwarded the mail(s)");
                 }
                 else
                 {
-                    Console.WriteLine("Incorrect recipient(s), forward mail not sent");
+                    Console.WriteLine("Incorrect recipient(s), mail(s) cannot be forwarded");
                 }
             }
 
-            Console.WriteLine("Hit any key to exit");
+            Console.WriteLine("Press any key to exit");
             Console.Read();
             inbox.UnRegisterItemAddEventHandler();
             return;
