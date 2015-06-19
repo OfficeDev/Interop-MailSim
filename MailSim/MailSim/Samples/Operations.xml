@@ -1,0 +1,62 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<MailSimOperations>
+
+  <MailSend OperationName="MailSendTo2Recipients2Attachments" Sleep="10">
+    <Recipients>Andrew Davidoff</Recipients>
+    <Recipients>Bob Mailsim</Recipients>
+    <Subject>Test</Subject>
+    <Body>Test message body</Body>
+    <Attachment>C:\SW\MailSimRun\sequence.xml</Attachment>
+    <Attachment>C:\SW\MailSimRun\operations.xml</Attachment>
+  </MailSend>
+
+  <MailSend OperationName="MailSendTo5RandomRecipients5RandomAttachments">
+    <RandomRecipients DistributionList="MailSim Users">5</RandomRecipients>
+    <RandomAttachments Count="5">C:\SW\MailSimRun</RandomAttachments>
+  </MailSend>
+
+  <MailSend OperationName="MailSendTo1RandomRecipient" Sleep="5">
+    <RandomRecipients DistributionList="MailSim Users">1</RandomRecipients>
+  </MailSend>
+
+  <MailSend OperationName="MailSendToMyself" Sleep="5">
+    <Recipients>Andrew Davidoff</Recipients>
+  </MailSend>
+
+  <MailDelete OperationName="MailDelete2Items" Count="2" Sleep="5">
+    <Folder>olFolderInbox</Folder>
+  </MailDelete>
+
+  <MailReply OperationName="MailReplyAllWithRandomAttachments" ReplyAll="true" Count="1">
+    <Folder>olFolderInbox</Folder>
+    <RandomAttachments Count="0">C:\SW\MailSimRun</RandomAttachments>
+  </MailReply>
+
+  <MailForward OperationName="MailForwardRandomlyWithRandomAttachments" Count="0">
+    <Folder>olFolderInbox</Folder>
+    <RandomRecipients DistributionList="MailSim Users">0</RandomRecipients>
+    <MailSubjectToForward>subject</MailSubjectToForward>
+    <RandomAttachments Count="0">C:\SW\MailSimRun</RandomAttachments>
+  </MailForward>
+  
+  <MailMove OperationName="MailMoveToJunk" Count="1">
+    <SourceFolder>olFolderInbox</SourceFolder>
+    <DestinationFolder>olFolderJunk</DestinationFolder>
+    <Subject>subject</Subject>
+  </MailMove>
+
+  <FolderCreate OperationName="FolderCreate" Count="2" Sleep="1">
+    <FolderPath>olFolderInbox</FolderPath>
+    <FolderName>Test Folder</FolderName>
+  </FolderCreate>
+
+  <FolderDelete OperationName="FolderDelete" Count="2" Sleep="3">
+    <FolderPath>olFolderInbox</FolderPath>
+    <FolderName>Test Folder</FolderName>
+  </FolderDelete>
+
+  <EventMonitor OperationName="EventMonitor" Sleep="5">
+    <Folder>olFolderInbox</Folder>
+  </EventMonitor>
+  
+</MailSimOperations>

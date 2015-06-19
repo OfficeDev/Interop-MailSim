@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<MailSimSequence >
+ 
+  <OperationGroup Name="Multiple Runs with 5 iterations" OperationFile="Operations.xml" Iterations="5" Sleep="120">
+    <Task Name="MailSendToMyself" Sleep="10"/>
+    <Task Name="MailSendTo2Recipients2Attachments" Sleep="10"/>
+    <Task Name="MailSendTo5RandomRecipients5RandomAttachments" Sleep="10"/>
+    <Task Name="MailSendTo1RandomRecipient" Sleep="10" Iterations = "2"/>
+    <Task Name="MailReplyAllWithRandomAttachments" Sleep="10"/>
+    <Task Name="MailDelete2Items" Sleep="60"/>
+
+  </OperationGroup>
+
+  <!--
+  <OperationGroup Name="Single Run" OperationFile="Operations.xml">
+    <Task Name="EventMonitor"/>
+    <Task Name="MailSendToMyself" Sleep="10"/>
+    <Task Name="MailSendTo2Recipients2Attachments" Sleep="10"/>
+    <Task Name="MailSendTo5RandomRecipients5RandomAttachments" Sleep="10"/>
+    <Task Name="MailSendTo1RandomRecipient" Sleep="10" Iterations = "2"/>
+    <Task Name="MailReplyAllWithRandomAttachments" Sleep="10"/>
+    <Task Name="MailForwardRandomlyWithRandomAttachments" Sleep="10"/>
+    <Task Name="MailDelete2Items" Sleep="60"/>
+
+  </OperationGroup>
+-->
+
+</MailSimSequence>
