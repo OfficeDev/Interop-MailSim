@@ -755,7 +755,7 @@ namespace MailSim
                 for (int count = 1; count <= iterations; count++)
                 {
                     Log.Out(Log.Severity.Info, operation.OperationName, "Starting iteration {0}", count);
-                    string newFolderName = System.DateTime.Now.ToString() + " - " + operation.FolderName;
+                    string newFolderName = System.DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss.fff") + " - " + operation.FolderName;
                     Log.Out(Log.Severity.Info, operation.OperationName, "Creating folder: {0}", newFolderName);
                     folder.AddSubFolder(newFolderName);
 
