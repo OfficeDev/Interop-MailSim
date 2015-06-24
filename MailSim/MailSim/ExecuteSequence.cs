@@ -694,8 +694,8 @@ namespace MailSim
                 {
                     Log.Out(Log.Severity.Info, operation.OperationName, "Starting iteration {0}", count);
 
-                    // just copy the email in order if random is not selected,
-                    // otherwise randomly pick the mail to copy
+                    // just move the email in order if random is not selected,
+                    // otherwise randomly pick the mail to move
                     indexToCopy = random ? randomNum.Next(0, mails.Count) : mails.Count - 1;
                     Log.Out(Log.Severity.Info, operation.OperationName, "Move to {0}: {1}",
                         operation.DestinationFolder, mails[indexToCopy].Subject);
@@ -1158,7 +1158,7 @@ namespace MailSim
         /// </summary>
         /// <param name="operationName">name of the operation</param>
         /// <param name="folder">folder to retrieve</param>
-        /// <param name="subject">subject to match</param>
+        /// <param name="subject">case sensitive subject to match</param>
         /// <returns>list of mails if successful, null otherwise</returns>
         private List<MailItem> GetMails(string operationName, string folder, string subject)
         {
