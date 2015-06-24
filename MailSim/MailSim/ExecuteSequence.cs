@@ -950,14 +950,17 @@ namespace MailSim
         /// <param name="Item">Item corresponding to the event</param>
         public static void FolderMonitorEvent(object Item)
         {
+            if (Item == null)
+            {
+                Log.Out(Log.Severity.Info, eventString, "Unknown event received");
+                return;
+            }
+
             // Only processing the MailItem
             if (Item is MailItem)
             {
                 MailItem mail = (MailItem)Item;
-                if (Item != null)
-                {
-                    Log.Out(Log.Severity.Info, eventString, "New item from {0} with subject \"{1}\"!!\n", mail.SenderName, mail.Subject);
-                }
+                Log.Out(Log.Severity.Info, eventString, "New item from {0} with subject \"{1}\"!!", mail.SenderName, mail.Subject);
             }
             else
             {
