@@ -22,6 +22,7 @@ namespace MailSim
     {
         private static string logFileName = null;
         private static string seqFileName;
+        private static StreamWriter logWriter;
 
         /// <summary>
         /// Severity of the log
@@ -68,9 +69,8 @@ namespace MailSim
             logFileName = logFileLocation + System.DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss") + " " + Environment.MachineName + " " + Path.GetFileName(seqFileName);
 
             // append the initial element to the log file
-            StreamWriter sWriter = new StreamWriter(logFileName, true, Encoding.UTF8);
-            sWriter.WriteLine("<" + Process.GetCurrentProcess().ProcessName + ">");
-            sWriter.Close();            
+            logWriter = new StreamWriter(logFileName, true, Encoding.UTF8);
+            logWriter.WriteLine("<" + Process.GetCurrentProcess().ProcessName + ">");        
         }
 
 
@@ -81,9 +81,8 @@ namespace MailSim
         {
             if (!string.IsNullOrEmpty(logFileName))
             {
-                StreamWriter sWriter = new StreamWriter(logFileName, true, Encoding.UTF8);
-                sWriter.WriteLine("</" + Process.GetCurrentProcess().ProcessName + ">");
-                sWriter.Close();
+                logWriter.WriteLine("</" + Process.GetCurrentProcess().ProcessName + ">");
+                logWriter.Close();
             }
         }
 
@@ -117,14 +116,11 @@ namespace MailSim
             // writes to the log file
             if (!string.IsNullOrEmpty(logFileName))
             {
-                using (StreamWriter sWriter = File.AppendText(logFileName))
-                {
-                    XElement element = new XElement(type.ToString(),
-                        new XAttribute("Name", name),
-                        new XAttribute("Time", System.DateTime.Now.ToString()),
-                        new XElement("Detail", String.Format(format, args)));
-                    sWriter.WriteLine(element.ToString());                       
-                }
+                XElement element = new XElement(type.ToString(),
+                    new XAttribute("Name", name),
+                    new XAttribute("Time", System.DateTime.Now.ToString()),
+                    new XElement("Detail", String.Format(format, args)));
+                logWriter.WriteLine(element.ToString());
             }
         }
     }
