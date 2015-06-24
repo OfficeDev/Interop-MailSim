@@ -698,7 +698,7 @@ namespace MailSim
 
                     // just move the email in order if random is not selected,
                     // otherwise randomly pick the mail to move
-                    indexToCopy = random ? randomNum.Next(0, mails.Count) : count - 1;
+                    indexToCopy = random ? randomNum.Next(0, mails.Count) : mails.Count - 1;
                     Log.Out(Log.Severity.Info, operation.OperationName, "Moving to {0}: {1}",
                         operation.DestinationFolder, mails[indexToCopy].Subject);
 
