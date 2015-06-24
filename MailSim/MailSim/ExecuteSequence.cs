@@ -408,7 +408,7 @@ namespace MailSim
                 if (iterations > mails.Count)
                 {
                     Log.Out(Log.Severity.Warning, operation.OperationName,
-                        "Only {0} email(s) are in the folder, so the number of emails to delete is adjusted from {0} to {1}",
+                        "Only {1} email(s) are in the folder, so the number of emails to delete is adjusted from {0} to {1}",
                         iterations, mails.Count);
                     iterations = mails.Count;
                 }
@@ -482,7 +482,7 @@ namespace MailSim
                 if (iterations > mails.Count)
                 {
                     Log.Out(Log.Severity.Warning, operation.OperationName,
-                        "Only {0} email(s) are in the folder, so the number of emails to reply is adjusted from {0} to {1}",
+                        "Only {1} email(s) are in the folder, so the number of emails to reply is adjusted from {0} to {1}",
                         iterations, mails.Count);
                     iterations = mails.Count;
                 }
@@ -572,7 +572,7 @@ namespace MailSim
                 if (iterations > mails.Count)
                 {
                     Log.Out(Log.Severity.Warning, operation.OperationName,
-                        "Only {0} email(s) are in the folder, so the the number of emails to forward is adjusted from {0} to {1}",
+                        "Only {1} email(s) are in the folder, so the the number of emails to forward is adjusted from {0} to {1}",
                         iterations, mails.Count);
                     iterations = mails.Count;
                 }
@@ -677,7 +677,7 @@ namespace MailSim
                 if (iterations > mails.Count)
                 {
                     Log.Out(Log.Severity.Warning, operation.OperationName,
-                        "Only {0} email(s) are in the folder, so the number of emails to move is adjusted from {0} to {1}",
+                        "Only {1} email(s) are in the folder, so the number of emails to move is adjusted from {0} to {1}",
                         iterations, mails.Count);
                     iterations = mails.Count;
                 }
