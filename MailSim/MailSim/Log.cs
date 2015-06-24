@@ -105,6 +105,12 @@ namespace MailSim
                 case Severity.Warning:
                     Console.ForegroundColor = ConsoleColor.Yellow;
                     break;
+                default:
+                    if(name == ExecuteSequence.eventString)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Green;
+                    }
+                    break;
             }
 
             // writes to the console

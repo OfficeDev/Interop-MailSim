@@ -38,6 +38,8 @@ namespace MailSim
 
         private List<MailFolder> FolderEventList = new List<MailFolder>();
 
+        private string DefaultInboxMonitor = "DefaultInboxMonitor";
+        public static string eventString = "Event";
 
         /// <summary>
         /// Constructor
@@ -99,7 +101,7 @@ namespace MailSim
             // Unregisters all registered folder events 
             foreach (MailFolder folder in FolderEventList)
             {
-                RegisterFolderEvent("Event", folder, false);
+                RegisterFolderEvent(DefaultInboxMonitor, folder, false);
             }
 
             FolderEventList.Clear();
@@ -954,12 +956,12 @@ namespace MailSim
                 MailItem mail = (MailItem)Item;
                 if (Item != null)
                 {
-                    Log.Out(Log.Severity.Info, "Event", "Event: New item from {0} with subject \"{1}\"!!\n", mail.SenderName, mail.Subject);
+                    Log.Out(Log.Severity.Info, eventString, "New item from {0} with subject \"{1}\"!!\n", mail.SenderName, mail.Subject);
                 }
             }
             else
             {
-                Log.Out(Log.Severity.Info, "Event", "Event received but with unknown type " + Item.GetType().ToString());
+                Log.Out(Log.Severity.Info, eventString, "Event received but with unknown type " + Item.GetType().ToString());
             }
         }
 
