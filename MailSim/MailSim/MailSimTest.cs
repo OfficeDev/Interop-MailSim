@@ -7,6 +7,16 @@
 // license agreement between you and Microsoft.
 //--------------------------------------------------------------------------------------
 
+
+//--------------------------------------------------------------------------------------
+//
+// NOTE: 
+// THIS IS A FILE USED FOR FEATURE DEVELOPMENT AND TESTING, THIS IS NOT USED FOR 
+// NORMAL MAILSIM OPERATION.
+//
+//--------------------------------------------------------------------------------------
+
+
 using System;
 using System.Collections.Generic;
 // declare use of the below to get Outlook wrapper classes (a.k.a. Mail*)
