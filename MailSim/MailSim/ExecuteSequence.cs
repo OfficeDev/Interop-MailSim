@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Xml;
 using Microsoft.Win32;
+using System.Linq;
 
 using MailSim.OL;
 
@@ -35,11 +36,14 @@ namespace MailSim
         private const string DefaultSubject = "Default Subject";
         private const string DefaultBody = "Default Body";
         private const int MaxNumberOfRandomFolder = 100;
+        private const string StopFileName = "stop.txt";
 
         private List<MailFolder> FolderEventList = new List<MailFolder>();
+        private IDictionary<Type, Func<object, bool>> typeFuncs = new Dictionary<Type, Func<object, bool>>();
 
         private string DefaultInboxMonitor = "DefaultInboxMonitor";
         public static string eventString = "Event";
+
 
         /// <summary>
         /// Constructor
@@ -47,6 +51,15 @@ namespace MailSim
         /// <param name="seq">Sequence file content </param>
         public ExecuteSequence(MailSimSequence seq)
         {
+            typeFuncs[typeof(MailSimOperationsMailSend)] = (oper) => MailSend((MailSimOperationsMailSend)oper);
+            typeFuncs[typeof(MailSimOperationsMailDelete)] = (oper) => MailDelete((MailSimOperationsMailDelete)oper);
+            typeFuncs[typeof(MailSimOperationsMailReply)] = (oper) => MailReply((MailSimOperationsMailReply)oper);
+            typeFuncs[typeof(MailSimOperationsMailForward)] = (oper) => MailForward((MailSimOperationsMailForward)oper);
+            typeFuncs[typeof(MailSimOperationsMailMove)] = (oper) => MailMove((MailSimOperationsMailMove)oper);
+            typeFuncs[typeof(MailSimOperationsFolderCreate)] = (oper) => FolderCreate((MailSimOperationsFolderCreate)oper);
+            typeFuncs[typeof(MailSimOperationsFolderDelete)] = (oper) => FolderDelete((MailSimOperationsFolderDelete)oper);
+            typeFuncs[typeof(MailSimOperationsEventMonitor)] = (oper) => EventMonitor((MailSimOperationsEventMonitor)oper);
+
             if (seq != null)
             {
                 try
@@ -75,7 +88,6 @@ namespace MailSim
                 }
             }
         }
-
 
         /// <summary>
         /// Destructor
@@ -129,11 +141,7 @@ namespace MailSim
             // Run each operation group
             foreach (MailSimSequenceOperationGroup group in sequence.OperationGroup)
             {
-                int iterations = 1;
-                if (!string.IsNullOrEmpty(group.Iterations))
-                {
-                    iterations = Convert.ToInt32(group.Iterations);
-                }
+                int iterations = GetIterationCount(group.Iterations);
 
                 // Run the operations file
                 operations = ConfigurationFile.LoadOperationFile(group.OperationFile, out operationXML);
@@ -155,18 +163,11 @@ namespace MailSim
 
                     Log.Out(Log.Severity.Info, group.Name, "Completed group task run {0}", count);
 
-                    if (!string.IsNullOrEmpty(group.Sleep))
-                    {
-                        int sleep = Convert.ToInt32(group.Sleep);
-                        Log.Out(Log.Severity.Info, group.Name, "Sleeping for {0} seconds", sleep);
-                        Thread.Sleep(sleep * 1000);
-                    }
+                    SleepOrStop(group.Name, group.Sleep);
                 }
 
                 CleanupAfterIteration();
             }
-
-            return;
         }
 
 
@@ -177,12 +178,7 @@ namespace MailSim
         /// <returns>Returns true if successful, otherwise returns false </returns>
         public void ProcessTask(MailSimSequenceOperationGroupTask task)
         {
-            int iterations = 1;
-
-            if (!string.IsNullOrEmpty(task.Iterations))
-            {
-                iterations = Convert.ToInt32(task.Iterations);
-            }
+            int iterations = GetIterationCount(task.Iterations);
 
             for (int count = 1; count <= iterations; count++)
             {
@@ -197,15 +193,9 @@ namespace MailSim
                     Log.Out(Log.Severity.Error, task.Name, "Failed to run task");
                 }
 
-                if (!string.IsNullOrEmpty(task.Sleep))
-                {
-                    int sleep = Convert.ToInt32(task.Sleep);
-                    Log.Out(Log.Severity.Info, task.Name, "Sleeping for {0} seconds", sleep);
-                    Thread.Sleep(sleep * 1000);
-                }
+                SleepOrStop(task.Name, task.Sleep);
             }
         }
-
 
         /// <summary>
         /// This method determines and calls the appropriate method to run the task
@@ -214,87 +204,35 @@ namespace MailSim
         /// <returns>Returns true if successful, otherwise returns false </returns>
         public bool ExecuteTask(string taskName)
         {
-            // Locates the actual operation using the name
-            XmlNodeList opNodes = operationXML.SelectNodes("//MailSimOperations/*[@OperationName='" + taskName + "']");
+            object operation = null;
 
-            // we expect only 1 operation node matching the name
-            if (opNodes.Count != 1)
+            try
             {
-                Log.Out(Log.Severity.Error, taskName,
-                    "There are {0} nodes in the operation XML file with name {1}",
-                    opNodes.Count, taskName);
+                operation = operations.Items.SingleOrDefault(x => GetOperationName(x) == taskName);
+            }
+            catch (InvalidOperationException)
+            {
+                // we expect only 1 operation node matching the name
+                Log.Out(Log.Severity.Error, taskName, "More than one task with this name");
                 return false;
             }
 
-            foreach (object operation in operations.Items)
+            if (operation == null)
             {
-                // Determine the right operation for the task
-                if (operation.GetType() == typeof(MailSimOperationsMailSend))
-                {
-                    if (((MailSimOperationsMailSend)operation).OperationName == taskName)
-                    {
-                        return MailSend((MailSimOperationsMailSend)operation);
-                    }
-                }
-                else if (operation.GetType() == typeof(MailSimOperationsMailDelete))
-                {
-                    if (((MailSimOperationsMailDelete)operation).OperationName == taskName)
-                    {
-                        return MailDelete((MailSimOperationsMailDelete)operation);
-                    }
-                }
-                else if (operation.GetType() == typeof(MailSimOperationsMailReply))
-                {
-                    if (((MailSimOperationsMailReply)operation).OperationName == taskName)
-                    {
-                        return MailReply((MailSimOperationsMailReply)operation);
-                    }
-                }
-                else if (operation.GetType() == typeof(MailSimOperationsMailForward))
-                {
-                    if (((MailSimOperationsMailForward)operation).OperationName == taskName)
-                    {
-                        return MailForward((MailSimOperationsMailForward)operation);
-                    }
-                }
-                else if (operation.GetType() == typeof(MailSimOperationsMailMove))
-                {
-                    if (((MailSimOperationsMailMove)operation).OperationName == taskName)
-                    {
-                        return MailMove((MailSimOperationsMailMove)operation);
-                    }
-                }
-                else if (operation.GetType() == typeof(MailSimOperationsFolderCreate))
-                {
-                    if (((MailSimOperationsFolderCreate)operation).OperationName == taskName)
-                    {
-                        return FolderCreate((MailSimOperationsFolderCreate)operation);
-                    }
-                }
-                else if (operation.GetType() == typeof(MailSimOperationsFolderDelete))
-                {
-                    if (((MailSimOperationsFolderDelete)operation).OperationName == taskName)
-                    {
-                        return FolderDelete((MailSimOperationsFolderDelete)operation);
-                    }
-                }
-                else if (operation.GetType() == typeof(MailSimOperationsEventMonitor))
-                {
-                    if (((MailSimOperationsEventMonitor)operation).OperationName == taskName)
-                    {
-                        return EventMonitor((MailSimOperationsEventMonitor)operation);
-                    }
-                }
-                else
-                {
-                    Log.Out(Log.Severity.Error, taskName, "Skipping unknown task");
-                }
+                Log.Out(Log.Severity.Error, taskName, "Unable to find matching task; skipping task");
+                return false;
             }
 
-            Log.Out(Log.Severity.Error, taskName, "Unable to find matching task; skipping task");
-            return false;
-        }
+            Func<object, bool> func;
 
+            if (typeFuncs.TryGetValue(operation.GetType(), out func) == false)
+            {
+                Log.Out(Log.Severity.Error, taskName, "Undefined task; skipping");
+                return false;
+            }
+
+            return func(operation);
+        }
 
         /// <summary>
         /// This method sends mail according to the parameter
@@ -303,12 +241,8 @@ namespace MailSim
         /// <returns>true if processed successfully, false otherwise</returns>
         private bool MailSend(MailSimOperationsMailSend operation)
         {
-            int iterations = 1;
-            if (!string.IsNullOrEmpty(operation.Count))
-            {
-                iterations = Convert.ToInt32(operation.Count);
-            }
-
+            int iterations = GetIterationCount(operation.Count);
+ 
             if (iterations < 1)
             {
                 Log.Out(Log.Severity.Error, operation.OperationName, "Count is less than the minimum allowed value", iterations);
@@ -360,12 +294,7 @@ namespace MailSim
                     return false;
                 }
 
-                if (!string.IsNullOrEmpty(operation.Sleep))
-                {
-                    int sleep = Convert.ToInt32(operation.Sleep);
-                    Log.Out(Log.Severity.Info, operation.OperationName, "Sleeping for {0} seconds", sleep);
-                    Thread.Sleep(sleep * 1000);
-                }
+                SleepOrStop(operation.OperationName, operation.Sleep);
             }
 
             return true;
@@ -379,12 +308,8 @@ namespace MailSim
         /// <returns>true if processed successfully, false otherwise</returns>
         private bool MailDelete(MailSimOperationsMailDelete operation)
         {
-            int iterations = 1;
+            int iterations = GetIterationCount(operation.Count);
             bool random = false;
-            if (!string.IsNullOrEmpty(operation.Count))
-            {
-                iterations = Convert.ToInt32(operation.Count);
-            }
 
             try
             {
@@ -413,25 +338,19 @@ namespace MailSim
                     iterations = mails.Count;
                 }
 
-                int indexToDelete;
                 for (int count = 1; count <= iterations; count++)
                 {
                     Log.Out(Log.Severity.Info, operation.OperationName, "Starting iteration {0}", count);
 
                     // just delete the email in order if random is not selected,
                     // otherwise randomly pick the mail to delete
-                    indexToDelete = random ? randomNum.Next(0, mails.Count) : mails.Count - 1;
+                    int indexToDelete = random ? randomNum.Next(0, mails.Count) : mails.Count - 1;
 
                     Log.Out(Log.Severity.Info, operation.OperationName, "Deleting email with subject: {0}", mails[indexToDelete].Subject);
                     mails[indexToDelete].Delete();
                     mails.RemoveAt(indexToDelete);
 
-                    if (!string.IsNullOrEmpty(operation.Sleep))
-                    {
-                        int sleep = Convert.ToInt32(operation.Sleep);
-                        Log.Out(Log.Severity.Info, operation.OperationName, "Sleeping for {0} seconds", sleep);
-                        Thread.Sleep(sleep * 1000);
-                    }
+                    SleepOrStop(operation.OperationName, operation.Sleep);
 
                     Log.Out(Log.Severity.Info, operation.OperationName, "Finished iteration {0}", count);
                 }
@@ -453,12 +372,8 @@ namespace MailSim
         /// <returns>true if processed successfully, false otherwise</returns>
         private bool MailReply(MailSimOperationsMailReply operation)
         {
-            int iterations = 1;
+            int iterations = GetIterationCount(operation.Count);
             bool random = false;
-            if (!string.IsNullOrEmpty(operation.Count))
-            {
-                iterations = Convert.ToInt32(operation.Count);
-            }
 
             try
             {
@@ -487,8 +402,6 @@ namespace MailSim
                     iterations = mails.Count;
                 }
 
-                int indexToReply;
-                MailItem mailToReply;
                 for (int count = 1; count <= iterations; count++)
                 {
                     Log.Out(Log.Severity.Info, operation.OperationName, "Starting iteration {0}", count);
@@ -497,8 +410,8 @@ namespace MailSim
 
                     // just reply the email in order if random is not selected,
                     // otherwise randomly pick the mail to reply
-                    indexToReply = random ? randomNum.Next(0, mails.Count) : count - 1;
-                    mailToReply = mails[indexToReply].Reply(operation.ReplyAll);
+                    int indexToReply = random ? randomNum.Next(0, mails.Count) : count - 1;
+                    MailItem mailToReply = mails[indexToReply].Reply(operation.ReplyAll);
 
                     Log.Out(Log.Severity.Info, operation.OperationName, "Subject: {0}", mailToReply.Subject);
 
@@ -516,12 +429,7 @@ namespace MailSim
 
                     mailToReply.Send();
 
-                    if (!string.IsNullOrEmpty(operation.Sleep))
-                    {
-                        int sleep = Convert.ToInt32(operation.Sleep);
-                        Log.Out(Log.Severity.Info, operation.OperationName, "Sleeping for {0} seconds", sleep);
-                        Thread.Sleep(sleep * 1000);
-                    }
+                    SleepOrStop(operation.OperationName, operation.Sleep);
 
                     Log.Out(Log.Severity.Info, operation.OperationName, "Finished iteration {0}", count);
                 }
@@ -543,13 +451,9 @@ namespace MailSim
         /// <returns>true if processed successfully, false otherwise</returns>
         private bool MailForward(MailSimOperationsMailForward operation)
         {
-            int iterations = 1;
+            int iterations = GetIterationCount(operation.Count);
             bool random = false;
-            if (!string.IsNullOrEmpty(operation.Count))
-            {
-                iterations = Convert.ToInt32(operation.Count);
-            }
-
+ 
             try
             {
                 // retrieves mails from Outlook
@@ -577,8 +481,6 @@ namespace MailSim
                     iterations = mails.Count;
                 }
 
-                int indexToForward;
-                MailItem mailToForward;
                 for (int count = 1; count <= iterations; count++)
                 {
                     Log.Out(Log.Severity.Info, operation.OperationName, "Starting iteration {0}", count);
@@ -595,8 +497,8 @@ namespace MailSim
 
                     // just forward the email in order if random is not selected,
                     // otherwise randomly pick the mail to forward
-                    indexToForward = random ? randomNum.Next(0, mails.Count) : count - 1;
-                    mailToForward = mails[indexToForward].Forward();
+                    int indexToForward = random ? randomNum.Next(0, mails.Count) : count - 1;
+                    MailItem mailToForward = mails[indexToForward].Forward();
 
                     Log.Out(Log.Severity.Info, operation.OperationName, "Subject: {0}", mailToForward.Subject);
 
@@ -621,12 +523,7 @@ namespace MailSim
 
                     mailToForward.Send();
 
-                    if (!string.IsNullOrEmpty(operation.Sleep))
-                    {
-                        int sleep = Convert.ToInt32(operation.Sleep);
-                        Log.Out(Log.Severity.Info, operation.OperationName, "Sleeping for {0} seconds", sleep);
-                        Thread.Sleep(sleep * 1000);
-                    }
+                    SleepOrStop(operation.OperationName, operation.Sleep);
 
                     Log.Out(Log.Severity.Info, operation.OperationName, "Finished iteration {0}", count);
                 }
@@ -648,12 +545,8 @@ namespace MailSim
         /// <returns>true if processed successfully, false otherwise</returns>
         private bool MailMove(MailSimOperationsMailMove operation)
         {
-            int iterations = 1;
+            int iterations = GetIterationCount(operation.Count);
             bool random = false;
-            if (!string.IsNullOrEmpty(operation.Count))
-            {
-                iterations = Convert.ToInt32(operation.Count);
-            }
 
             try
             {
@@ -691,26 +584,20 @@ namespace MailSim
                     return false;
                 }
 
-                int indexToCopy;
                 for (int count = 1; count <= iterations; count++)
                 {
                     Log.Out(Log.Severity.Info, operation.OperationName, "Starting iteration {0}", count);
 
                     // just move the email in order if random is not selected,
                     // otherwise randomly pick the mail to move
-                    indexToCopy = random ? randomNum.Next(0, mails.Count) : mails.Count - 1;
+                    int indexToCopy = random ? randomNum.Next(0, mails.Count) : mails.Count - 1;
                     Log.Out(Log.Severity.Info, operation.OperationName, "Moving to {0}: {1}",
                         operation.DestinationFolder, mails[indexToCopy].Subject);
 
                     mails[indexToCopy].Move(destinationFolder);
                     mails.RemoveAt(indexToCopy);
 
-                    if (!string.IsNullOrEmpty(operation.Sleep))
-                    {
-                        int sleep = Convert.ToInt32(operation.Sleep);
-                        Log.Out(Log.Severity.Info, operation.OperationName, "Sleeping for {0} seconds", sleep);
-                        Thread.Sleep(sleep * 1000);
-                    }
+                    SleepOrStop(operation.OperationName, operation.Sleep);
 
                     Log.Out(Log.Severity.Info, operation.OperationName, "Finished iteration {0}", count);
                 }
@@ -731,11 +618,7 @@ namespace MailSim
         /// <returns>true if processed successfully, false otherwise</returns>
         private bool FolderCreate(MailSimOperationsFolderCreate operation)
         {
-            int iterations = 1;
-            if (!string.IsNullOrEmpty(operation.Count))
-            {
-                iterations = Convert.ToInt32(operation.Count);
-            }
+            int iterations = GetIterationCount(operation.Count);
 
             try
             {
@@ -762,12 +645,7 @@ namespace MailSim
                     Log.Out(Log.Severity.Info, operation.OperationName, "Creating folder: {0}", newFolderName);
                     folder.AddSubFolder(newFolderName);
 
-                    if (!string.IsNullOrEmpty(operation.Sleep))
-                    {
-                        int sleep = Convert.ToInt32(operation.Sleep);
-                        Log.Out(Log.Severity.Info, operation.OperationName, "Sleeping for {0} seconds", sleep);
-                        Thread.Sleep(sleep * 1000);
-                    }
+                    SleepOrStop(operation.OperationName, operation.Sleep);
 
                     Log.Out(Log.Severity.Info, operation.OperationName, "Finished iteration {0}", count);
                 }
@@ -789,12 +667,8 @@ namespace MailSim
         /// <returns>true if processed successfully, false otherwise</returns>
         private bool FolderDelete(MailSimOperationsFolderDelete operation)
         {
-            int iterations = 1;
+            int iterations = GetIterationCount(operation.Count);
             bool random = false;
-            if (!string.IsNullOrEmpty(operation.Count))
-            {
-                iterations = Convert.ToInt32(operation.Count);
-            }
 
             try
             {
@@ -841,12 +715,7 @@ namespace MailSim
                     subFolders[indexToDelete].Delete();
                     subFolders.RemoveAt(indexToDelete);
 
-                    if (!string.IsNullOrEmpty(operation.Sleep))
-                    {
-                        int sleep = Convert.ToInt32(operation.Sleep);
-                        Log.Out(Log.Severity.Info, operation.OperationName, "Sleeping for {0} seconds", sleep);
-                        Thread.Sleep(sleep * 1000);
-                    }
+                    SleepOrStop(operation.OperationName, operation.Sleep);
                 }
             }
             catch (Exception ex)
@@ -895,13 +764,7 @@ namespace MailSim
                     }
                 }
 
-                if (!string.IsNullOrEmpty(operation.Sleep))
-                {
-                    int sleep = Convert.ToInt32(operation.Sleep);
-                    Log.Out(Log.Severity.Info, operation.OperationName, "Sleeping for {0} seconds", sleep);
-                    Thread.Sleep(sleep * 1000);
-                }
-
+                SleepOrStop(operation.OperationName, operation.Sleep);
             }
             catch (Exception ex)
             {
@@ -1018,6 +881,7 @@ namespace MailSim
                 try
                 {
                     List<string> galUsers;
+
                     OLAddressList gal = olMailStore.GetGlobalAddressList();
 
                     // uses the global distribution list if not specified
@@ -1052,10 +916,9 @@ namespace MailSim
                         randomCount = galUsers.Count;
                     }
 
-                    int recipientNumber;
                     for (int count = 0; count < randomCount; count++)
                     {
-                        recipientNumber = randomNum.Next(0, galUsers.Count);
+                        int recipientNumber = randomNum.Next(0, galUsers.Count);
                         recipients.Add(galUsers[recipientNumber]);
                         galUsers.RemoveAt(recipientNumber);
                     }
@@ -1152,7 +1015,6 @@ namespace MailSim
             else
             {
                 Log.Out(Log.Severity.Error, name, "Unknown attachment type {0}", attachmentObject[0].GetType());
-                return null;
             }
 
             return attachments;
@@ -1296,6 +1158,39 @@ namespace MailSim
             catch (Exception ex)
             {
                 Log.Out(Log.Severity.Error, "", "Unable to change registry, you may want to run this as Administrator\n" + ex.ToString());
+            }
+        }
+
+        private int GetIterationCount(string countString)
+        {
+            if (string.IsNullOrEmpty(countString))
+            {
+                return 1;
+            }
+
+            return Convert.ToInt32(countString);
+        }
+
+        private string GetOperationName(object operation)
+        {
+            dynamic op = operation;
+
+            return op.OperationName;
+        }
+
+        private void SleepOrStop(string name, string sleepSeconds)
+        {
+            if (File.Exists(StopFileName))
+            {
+                Log.Out(Log.Severity.Info, string.Format("StopApplication at {0}", name), "Stopping simulation run...");
+                Environment.Exit(0);
+            }
+
+            if (!string.IsNullOrEmpty(sleepSeconds))
+            {
+                int sleep = Convert.ToInt32(sleepSeconds);
+                Log.Out(Log.Severity.Info, name, "Sleeping for {0} seconds", sleep);
+                Thread.Sleep(sleep * 1000);
             }
         }
     }

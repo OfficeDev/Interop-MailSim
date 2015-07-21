@@ -21,6 +21,7 @@ using System;
 using System.Collections.Generic;
 // declare use of the below to get Outlook wrapper classes (a.k.a. Mail*)
 using MailSim.OL;
+using System.Linq;
 
 namespace MailSim
 {
@@ -44,16 +45,10 @@ namespace MailSim
 
                 // Get all mailboxes (stores) in the profile. 
                 //Returns only email stores (skips Public Folders, Delegates, Archives, PSTs)
-                MailStore[] stores = olConnection.GetAllMailStores();
+                IEnumerable<MailStore> stores = olConnection.GetAllMailStores();
 
-                //Search for specific mailbox (store) to use
-                foreach (MailStore store in stores)
-                {
-                    if (store.DisplayName.ToLower() == mailboxName)
-                    {
-                        mailStore = store;
-                    }
-                }
+                mailStore = stores.FirstOrDefault(x => x.DisplayName.ToLower() == mailboxName);
+
                 if (mailStore == null)
                 {
                     Console.WriteLine("Cannot find store (mailbox) {0} in default profile", mailboxName);
@@ -81,7 +76,6 @@ namespace MailSim
             // Registering callback for Inbox "ItemAdd" event
             inbox.RegisterItemAddEventHandler(FolderEvent);
             
-            MailItems inboxItems = inbox.GetMailItems();
             Console.WriteLine("Inbox has {0} mail items", inbox.MailItemsCount);
             MailFolders inboxSubFolders = inbox.GetSubFolders();
             MailFolder testFolder = null;

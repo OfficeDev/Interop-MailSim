@@ -23,6 +23,8 @@ namespace MailSim
         /// <param name="args">Command line arguments</param>
         static void Main(string[] args)
         {
+            AppDomain.CurrentDomain.ProcessExit += new EventHandler(OnProcessExit);
+            
             if (args.Length > 0)
             {
                 if (args[0] == "/t")
@@ -52,6 +54,10 @@ namespace MailSim
             ProcessArgs(args);
         }
 
+        static void OnProcessExit(object sender, EventArgs e)
+        {
+            Log.CloseLogFileElement();
+        }
 
         /// <summary>
         /// Starting main execution engine

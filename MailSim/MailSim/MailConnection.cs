@@ -71,34 +71,18 @@ namespace MailSim.OL
         /// <summary>
         /// This method gets all mail stores
         /// </summary>
-        /// <returns>an array of mail store objects</returns>
-        public MailStore[] GetAllMailStores()
+        /// <returns>an enumeration of mail store objects</returns>
+        public IEnumerable<MailStore> GetAllMailStores()
         {
-            int i = 0;
             foreach (Outlook.Store store in _outlook.Session.Stores)
             {
                 if ((store.ExchangeStoreType == Outlook.OlExchangeStoreType.olPrimaryExchangeMailbox)
                     || (store.ExchangeStoreType == Outlook.OlExchangeStoreType.olAdditionalExchangeMailbox)
                     || (store.ExchangeStoreType == Outlook.OlExchangeStoreType.olNotExchange))
                 {
-                    i++;
+                    yield return new MailStore(store);
                 }
             }
-
-            MailStore[] mailStores = new MailStore[i];
-            i = 0;
-            foreach (Outlook.Store store in _outlook.Session.Stores)
-            {
-                if ((store.ExchangeStoreType == Outlook.OlExchangeStoreType.olPrimaryExchangeMailbox)
-                    || (store.ExchangeStoreType == Outlook.OlExchangeStoreType.olAdditionalExchangeMailbox)
-                    || (store.ExchangeStoreType == Outlook.OlExchangeStoreType.olNotExchange))
-                {
-                    mailStores[i] = new MailStore(store);
-                    i++;
-                }
-            }
-
-            return mailStores;
         }
 
         /// <summary>

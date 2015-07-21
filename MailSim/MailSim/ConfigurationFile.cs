@@ -35,13 +35,13 @@ namespace MailSim
             if (!sequenceFile.EndsWith(".xml", StringComparison.InvariantCultureIgnoreCase) || !File.Exists(sequenceFile))
             {
                 Log.Out(Log.Severity.Error, XMLProcessing, "Sequence file {0} does not exist", sequenceFile);
-                return sequence;
+                return null;
             }
 
             if (!File.Exists(SequenceSchema))
             {
                 Log.Out(Log.Severity.Error, XMLProcessing, "Unable to locate schema file {0}", SequenceSchema);
-                return sequence;
+                return null;
             }
 
             try
@@ -83,13 +83,13 @@ namespace MailSim
             if (!opFile.EndsWith(".xml", StringComparison.InvariantCultureIgnoreCase) || !File.Exists(opFile))
             {
                 Log.Out(Log.Severity.Error, XMLProcessing, "Specified operation file {0} does not exist", opFile);
-                return operations;
+                return null;
             }
 
             if (!File.Exists(OperationSchema))
             {
                 Log.Out(Log.Severity.Error, XMLProcessing, "Unable to locate schema file {0}", OperationSchema);
-                return operations;
+                return null;
             }
             try
             {
