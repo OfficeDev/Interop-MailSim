@@ -87,11 +87,6 @@ namespace MailSim
             {
                 Log.Out(Log.Severity.Error, Process.GetCurrentProcess().ProcessName, "Error encountered\n" + ex.ToString());
             }
-            finally
-            {
-                // closes the log file element
-                Log.CloseLogFileElement();
-            }
         }
 
 

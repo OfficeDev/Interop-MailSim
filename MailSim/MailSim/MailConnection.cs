@@ -15,7 +15,6 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using Outlook = Microsoft.Office.Interop.Outlook;
 
-
 namespace MailSim.OL
 {
     public class MailConnection
@@ -63,7 +62,8 @@ namespace MailSim.OL
             // Closes the Outlook process
             if (_outlook != null && !_keepOutlookRunning)
             {
-                Log.Out(Log.Severity.Info, "Connection", "Exiting Outlook");
+                Console.WriteLine("Exiting Outlook");
+ 
                 _outlook.Quit();
             }
         }

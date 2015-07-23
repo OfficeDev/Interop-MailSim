@@ -1123,6 +1123,7 @@ namespace MailSim
         /// <param name="show">True to enable Outlook prompts, False to disable Outlook prompts.</param>
         public void ConfigOutlookPrompts(bool show)
         {
+#if false
             const string olSecurityKey = @"HKEY_CURRENT_USER\" + OutlookPolicyRegistryRoot + @"\Security";
             const string adminSecurityMode = "AdminSecurityMode";
             const string addressBookAccess = "PromptOOMAddressBookAccess";
@@ -1159,6 +1160,7 @@ namespace MailSim
             {
                 Log.Out(Log.Severity.Error, "", "Unable to change registry, you may want to run this as Administrator\n" + ex.ToString());
             }
+#endif
         }
 
         private int GetIterationCount(string countString)
