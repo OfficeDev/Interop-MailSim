@@ -1,2 +1,2 @@
-# Interop
-Our Office Interop Tooling
+# Interop-MailSim
+Office Interop Tooling - MailSim
