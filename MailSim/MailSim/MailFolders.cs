@@ -44,6 +44,20 @@ namespace MailSim.OL
         }
 
         /// <summary>
+        /// FindFolder. Finds a specific named folder.
+        /// </summary>
+        /// <returns>MailFolder object</returns>
+        public MailFolder FindFolder(string foldername)
+        {
+            foreach (Outlook.Folder folder in _folders)
+            {
+                if (folder.Name == foldername)
+                    return new MailFolder(folder);
+            }
+            return null;
+        }
+
+        /// <summary>
         /// Gets the first folder
         /// </summary>
         /// <returns>first folder</returns>
