@@ -58,7 +58,17 @@
           <xs:element name="MailDelete">
             <xs:complexType>
               <xs:sequence>
-                <!-- List of supported folders can be found in http://msdn.microsoft.com/en-us/library/office/microsoft.office.interop.outlook.oldefaultfolders%28v=office.15%29.aspx -->
+              <!--List of Outlook default folders supported in MailSim: 
+
+                      olFolderInbox
+                      olFolderDeletedItems
+                      olFolderDrafts
+                      olFolderJunk
+                      olFolderOutbox
+                      olFolderSentMail
+
+                The full list that Outlook supports can be referenced here: 
+                http://msdn.microsoft.com/en-us/library/office/microsoft.office.interop.outlook.oldefaultfolders%28v=office.15%29.aspx--> 
                 <xs:element name="Folder" type="xs:string" />
                 <!-- Case sensitive subject -->
                 <xs:element minOccurs="0" name="Subject" type="xs:string" />
@@ -76,7 +86,17 @@
           <xs:element name="MailReply">
             <xs:complexType>
               <xs:sequence>
-                <!-- List of supported folders can be found in http://msdn.microsoft.com/en-us/library/office/microsoft.office.interop.outlook.oldefaultfolders%28v=office.15%29.aspx -->
+              <!--List of Outlook default folders supported in MailSim: 
+
+                      olFolderInbox
+                      olFolderDeletedItems
+                      olFolderDrafts
+                      olFolderJunk
+                      olFolderOutbox
+                      olFolderSentMail
+
+                The full list that Outlook supports can be referenced here: 
+                http://msdn.microsoft.com/en-us/library/office/microsoft.office.interop.outlook.oldefaultfolders%28v=office.15%29.aspx--> 
                 <xs:element name="Folder" type="xs:string" />
                 <!-- The tool finds all emails containing the MailSubjectToReply subject to reply, subject is case sensitive, if specified-->
                 <xs:element minOccurs="0" name="MailSubjectToReply" type="xs:string" />
@@ -114,7 +134,17 @@
           <xs:element name="MailForward">
             <xs:complexType>
               <xs:sequence>
-                <!-- List of supported folders can be found in http://msdn.microsoft.com/en-us/library/office/microsoft.office.interop.outlook.oldefaultfolders%28v=office.15%29.aspx -->
+              <!--List of Outlook default folders supported in MailSim: 
+
+                      olFolderInbox
+                      olFolderDeletedItems
+                      olFolderDrafts
+                      olFolderJunk
+                      olFolderOutbox
+                      olFolderSentMail
+
+                The full list that Outlook supports can be referenced here: 
+                http://msdn.microsoft.com/en-us/library/office/microsoft.office.interop.outlook.oldefaultfolders%28v=office.15%29.aspx--> 
                 <xs:element name="Folder" type="xs:string" />
                 <!-- Specify either random recipients or specific recipient(s)-->
                 <xs:choice>
@@ -168,7 +198,17 @@
           <xs:element name="MailMove">
             <xs:complexType>
               <xs:sequence>
-                <!-- List of supported folders can be found in http://msdn.microsoft.com/en-us/library/office/microsoft.office.interop.outlook.oldefaultfolders%28v=office.15%29.aspx -->
+              <!--List of Outlook default folders supported in MailSim: 
+
+                      olFolderInbox
+                      olFolderDeletedItems
+                      olFolderDrafts
+                      olFolderJunk
+                      olFolderOutbox
+                      olFolderSentMail
+
+                The full list that Outlook supports can be referenced here: 
+                http://msdn.microsoft.com/en-us/library/office/microsoft.office.interop.outlook.oldefaultfolders%28v=office.15%29.aspx--> 
                 <xs:element name="SourceFolder" type="xs:string" />
                 <xs:element name="DestinationFolder" type="xs:string" />
                 <!-- Case sensitive subject -->
@@ -187,7 +227,17 @@
           <xs:element name="FolderCreate">
             <xs:complexType>
               <xs:sequence>
-                <!-- List of supported folders can be found in http://msdn.microsoft.com/en-us/library/office/microsoft.office.interop.outlook.oldefaultfolders%28v=office.15%29.aspx -->
+              <!--List of Outlook default folders supported in MailSim: 
+
+                      olFolderInbox
+                      olFolderDeletedItems
+                      olFolderDrafts
+                      olFolderJunk
+                      olFolderOutbox
+                      olFolderSentMail
+
+                The full list that Outlook supports can be referenced here: 
+                http://msdn.microsoft.com/en-us/library/office/microsoft.office.interop.outlook.oldefaultfolders%28v=office.15%29.aspx--> 
                 <xs:element name="FolderPath" type="xs:string" />
                 <xs:element name="FolderName" type="xs:string" />
               </xs:sequence>
@@ -204,7 +254,17 @@
           <xs:element name="FolderDelete">
             <xs:complexType>
               <xs:sequence>
-                <!-- List of supported folders can be found in http://msdn.microsoft.com/en-us/library/office/microsoft.office.interop.outlook.oldefaultfolders%28v=office.15%29.aspx -->
+              <!--List of Outlook default folders supported in MailSim: 
+
+                      olFolderInbox
+                      olFolderDeletedItems
+                      olFolderDrafts
+                      olFolderJunk
+                      olFolderOutbox
+                      olFolderSentMail
+
+                The full list that Outlook supports can be referenced here: 
+                http://msdn.microsoft.com/en-us/library/office/microsoft.office.interop.outlook.oldefaultfolders%28v=office.15%29.aspx--> 
                 <xs:element name="FolderPath" type="xs:string" />
                 <!-- Name of the folder to delete. Folders containing FolderName will be targeted if specified-->
                 <xs:element name="FolderName" type="xs:string" />
@@ -222,7 +282,17 @@
           <xs:element name="EventMonitor">
             <xs:complexType>
               <xs:sequence>
-                <!-- List of supported folders can be found in http://msdn.microsoft.com/en-us/library/office/microsoft.office.interop.outlook.oldefaultfolders%28v=office.15%29.aspx -->
+              <!--List of Outlook default folders supported in MailSim: 
+
+                      olFolderInbox
+                      olFolderDeletedItems
+                      olFolderDrafts
+                      olFolderJunk
+                      olFolderOutbox
+                      olFolderSentMail
+
+                The full list that Outlook supports can be referenced here: 
+                http://msdn.microsoft.com/en-us/library/office/microsoft.office.interop.outlook.oldefaultfolders%28v=office.15%29.aspx--> 
                 <xs:element name="Folder" type="xs:string" />
               </xs:sequence>
               <!-- Unique name for the operation, this will be used as a reference for the sequence file-->
