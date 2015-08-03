@@ -742,17 +742,9 @@ namespace MailSim
                 MailFolder folder = olMailStore.GetDefaultFolder(operation.Folder);
                 if (folder == null)
                 {
-                    // might be a custom folder under the Inbox (right now we'll only support folders under the Inbox)
-                    MailFolder inboxFolder = olMailStore.GetDefaultFolder("olFolderInbox");
-                    MailFolders mfCollection = inboxFolder.GetSubFolders();
-                    folder = mfCollection.FindFolder(operation.Folder);
-                    if (folder == null)
-                    {
-                        Log.Out(Log.Severity.Error, operation.OperationName, "Unable to retrieve folder {0}",
-                         operation.Folder);
-                        return false;
-                    }
-
+                    Log.Out(Log.Severity.Error, operation.OperationName, "Unable to retrieve folder {0}",
+                     operation.Folder);
+                    return false;
                 }
 
                 // makes sure we are not already registered for the folder
