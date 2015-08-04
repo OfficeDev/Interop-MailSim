@@ -14,7 +14,7 @@ using System.Xml;
 using Microsoft.Win32;
 using System.Linq;
 
-using MailSim.OL;
+using MailSim.Contracts;
 
 namespace MailSim
 {
@@ -23,8 +23,7 @@ namespace MailSim
         private MailSimSequence sequence;
         private MailSimOperations operations;
         private XmlDocument operationXML;
-        private MailConnection olConnection;
-        private MailStore olMailStore;
+        private IMailStore olMailStore;
         private Random randomNum;
 
         private const string OfficeVersion = "15.0";
@@ -38,7 +37,7 @@ namespace MailSim
         private const int MaxNumberOfRandomFolder = 100;
         private const string StopFileName = "stop.txt";
 
-        private List<MailFolder> FolderEventList = new List<MailFolder>();
+        private List<IMailFolder> FolderEventList = new List<IMailFolder>();
         private IDictionary<Type, Func<object, bool>> typeFuncs = new Dictionary<Type, Func<object, bool>>();
 
         private string DefaultInboxMonitor = "DefaultInboxMonitor";
@@ -73,10 +72,8 @@ namespace MailSim
                     }
 
                     // Openes connection to Outlook with default profile, starts Outlook if it is not running
-                    olConnection = new MailConnection();
-
                     // Note: Currently only the default MailStore is supported.
-                    olMailStore = olConnection.GetDefaultStore();
+                    olMailStore = ProviderFactory.CreateMailStore(null);
 
                     // Initializes a random number
                     randomNum = new Random();
@@ -111,7 +108,7 @@ namespace MailSim
         public void CleanupAfterIteration()
         {
             // Unregisters all registered folder events 
-            foreach (MailFolder folder in FolderEventList)
+            foreach (IMailFolder folder in FolderEventList)
             {
                 RegisterFolderEvent(DefaultInboxMonitor, folder, false);
             }
@@ -264,7 +261,7 @@ namespace MailSim
                 try
                 {
                     // generates a new email
-                    MailItem mail = olMailStore.NewMailItem();
+                    IMailItem mail = olMailStore.NewMailItem();
 
                     mail.Subject = mail.Body = System.DateTime.Now.ToString() + " - ";
                     mail.Subject += (string.IsNullOrEmpty(operation.Subject)) ? DefaultSubject : operation.Subject;
@@ -314,8 +311,8 @@ namespace MailSim
             try
             {
                 // Retrieves mails from Outlook
-                List<MailItem> mails = GetMails(operation.OperationName, operation.Folder, operation.Subject);
-                if (mails == null || mails.Count == 0)
+                var mails = GetMails(operation.OperationName, operation.Folder, operation.Subject).ToList();
+                if (mails.Any() == false)
                 {
                     Log.Out(Log.Severity.Error, operation.OperationName, "Skipping MailDelete");
                     return false;
@@ -378,8 +375,8 @@ namespace MailSim
             try
             {
                 // retrieves mails from Outlook
-                List<MailItem> mails = GetMails(operation.OperationName, operation.Folder, operation.MailSubjectToReply);
-                if (mails == null || mails.Count == 0)
+                var mails = GetMails(operation.OperationName, operation.Folder, operation.MailSubjectToReply).ToList();
+                if (mails.Any() == false)
                 {
                     Log.Out(Log.Severity.Error, operation.OperationName, "Skipping MailReply");
                     return false;
@@ -411,7 +408,7 @@ namespace MailSim
                     // just reply the email in order if random is not selected,
                     // otherwise randomly pick the mail to reply
                     int indexToReply = random ? randomNum.Next(0, mails.Count) : count - 1;
-                    MailItem mailToReply = mails[indexToReply].Reply(operation.ReplyAll);
+                    IMailItem mailToReply = mails[indexToReply].Reply(operation.ReplyAll);
 
                     Log.Out(Log.Severity.Info, operation.OperationName, "Subject: {0}", mailToReply.Subject);
 
@@ -457,8 +454,8 @@ namespace MailSim
             try
             {
                 // retrieves mails from Outlook
-                List<MailItem> mails = GetMails(operation.OperationName, operation.Folder, operation.MailSubjectToForward);
-                if (mails == null || mails.Count == 0)
+                var mails = GetMails(operation.OperationName, operation.Folder, operation.MailSubjectToForward).ToList();
+                if (mails.Any() == false)
                 {
                     Log.Out(Log.Severity.Error, operation.OperationName, "Skipping MailForward");
                     return false;
@@ -498,7 +495,7 @@ namespace MailSim
                     // just forward the email in order if random is not selected,
                     // otherwise randomly pick the mail to forward
                     int indexToForward = random ? randomNum.Next(0, mails.Count) : count - 1;
-                    MailItem mailToForward = mails[indexToForward].Forward();
+                    IMailItem mailToForward = mails[indexToForward].Forward();
 
                     Log.Out(Log.Severity.Info, operation.OperationName, "Subject: {0}", mailToForward.Subject);
 
@@ -551,8 +548,8 @@ namespace MailSim
             try
             {
                 // retrieves mails from Outlook
-                List<MailItem> mails = GetMails(operation.OperationName, operation.SourceFolder, operation.Subject);
-                if (mails == null || mails.Count == 0)
+                var mails = GetMails(operation.OperationName, operation.SourceFolder, operation.Subject).ToList();
+                if (mails.Any() == false)
                 {
                     Log.Out(Log.Severity.Error, operation.OperationName, "Skipping MailMove");
                     return false;
@@ -576,7 +573,7 @@ namespace MailSim
                 }
 
                 // gets the Outlook destination folder
-                MailFolder destinationFolder = olMailStore.GetDefaultFolder(operation.DestinationFolder);
+                IMailFolder destinationFolder = olMailStore.GetDefaultFolder(operation.DestinationFolder);
                 if (destinationFolder == null)
                 {
                     Log.Out(Log.Severity.Error, operation.OperationName, "Unable to retrieve folder {0}",
@@ -623,7 +620,7 @@ namespace MailSim
             try
             {
                 // gets the Outlook folder
-                MailFolder folder = olMailStore.GetDefaultFolder(operation.FolderPath);
+                IMailFolder folder = olMailStore.GetDefaultFolder(operation.FolderPath);
                 if (folder == null)
                 {
                     Log.Out(Log.Severity.Error, operation.OperationName, "Unable to retrieve folder {0}",
@@ -673,7 +670,7 @@ namespace MailSim
             try
             {
                 // gets the Outlook folder
-                MailFolder folder = olMailStore.GetDefaultFolder(operation.FolderPath);
+                IMailFolder folder = olMailStore.GetDefaultFolder(operation.FolderPath);
                 if (folder == null)
                 {
                     Log.Out(Log.Severity.Error, operation.OperationName, "Unable to retrieve folder {0}",
@@ -681,7 +678,7 @@ namespace MailSim
                     return false;
                 }
 
-                List<MailFolder> subFolders = GetMatchingSubFolders(operation.OperationName, folder, operation.FolderName);
+                var subFolders = GetMatchingSubFolders(operation.OperationName, folder, operation.FolderName).ToList();
                 if (subFolders.Count == 0)
                 {
                     Log.Out(Log.Severity.Error, operation.OperationName, "There is no matching folder to delete in folder {0}",
@@ -739,7 +736,7 @@ namespace MailSim
             try
             {
                 // gets the default Outlook folder
-                MailFolder folder = olMailStore.GetDefaultFolder(operation.Folder);
+                IMailFolder folder = olMailStore.GetDefaultFolder(operation.Folder);
                 if (folder == null)
                 {
                     Log.Out(Log.Severity.Error, operation.OperationName, "Unable to retrieve folder {0}",
@@ -782,7 +779,7 @@ namespace MailSim
         /// <param name="operation">name of the operation</param>
         /// <param name="folder">Outlook folder</param>
         /// <param name="register">True to register folder event monitoring, False to unregister folder event monitoring</param>
-        private bool RegisterFolderEvent(string operation, MailFolder folder, bool register)
+        private bool RegisterFolderEvent(string operation, IMailFolder folder, bool register)
         {
             try
             {
@@ -820,9 +817,9 @@ namespace MailSim
             }
 
             // Only processing the MailItem
-            if (Item is MailItem)
+            if (Item is IMailItem)
             {
-                MailItem mail = (MailItem)Item;
+                IMailItem mail = (IMailItem)Item;
                 Log.Out(Log.Severity.Info, eventString, "New item from {0} with subject \"{1}\"!!", mail.SenderName, mail.Subject);
             }
             else
@@ -882,20 +879,20 @@ namespace MailSim
                 {
                     List<string> galUsers;
 
-                    OLAddressList gal = olMailStore.GetGlobalAddressList();
+                    var gal = olMailStore.GetGlobalAddressList();
 
                     // uses the global distribution list if not specified
                     if (string.IsNullOrEmpty(randomRecpt.DistributionList))
                     {
-                        galUsers = gal.GetUsers(null);
+                        galUsers = gal.GetUsers(null).ToList();
                     }
                     // queries the specific distribution list if specified
                     else
                     {
-                        galUsers = gal.GetDLMembers(randomRecpt.DistributionList);
+                        galUsers = gal.GetDLMembers(randomRecpt.DistributionList).ToList();
                     }
 
-                    if (galUsers == null || galUsers.Count == 0)
+                    if (galUsers.Any() == false)
                     {
                         throw new ArgumentException("There is no user in the GAL that matches the recipient criteria");
                     }
@@ -1028,35 +1025,34 @@ namespace MailSim
         /// <param name="folder">folder to retrieve</param>
         /// <param name="subject">case sensitive subject to match</param>
         /// <returns>list of mails if successful, null otherwise</returns>
-        private List<MailItem> GetMails(string operationName, string folder, string subject)
+        private IEnumerable<IMailItem> GetMails(string operationName, string folder, string subject)
         {
-            List<MailItem> mails = new List<MailItem>();
-
             // retrieves the Outlook folder
-            MailFolder mailFolder = olMailStore.GetDefaultFolder(folder);
+            IMailFolder mailFolder = olMailStore.GetDefaultFolder(folder);
             if (mailFolder == null)
             {
                 Log.Out(Log.Severity.Error, operationName, "Unable to retrieve folder {0}",
                     folder);
-                return null;
+                return Enumerable.Empty<IMailItem>();
             }
 
             // retrieves the mail items from the folder
-            MailItems folderItems = mailFolder.GetMailItems();
+            var mails = mailFolder.MailItems;
 
-            if (folderItems == null || folderItems.Count == 0)
+            if (mails.Any() == false)
             {
                 Log.Out(Log.Severity.Error, operationName, "No item in folder {0}", folder);
-                return null;
+                return mails;
             }
 
             // finds all mail items with matching subject if specified
-            mails = FindMailWithSubject(folderItems, subject);
-            if (mails.Count == 0)
+            subject = subject ?? string.Empty;
+            mails = mails.Where(x => x.Subject.Contains(subject));
+
+            if (mails.Any() == false)
             {
                 Log.Out(Log.Severity.Error, operationName, "Unable to find mail with subject {0}",
                     subject);
-                return null;
             }
 
             return mails;
@@ -1070,51 +1066,19 @@ namespace MailSim
         /// <param name="rootFolder">the root folder to retrieve subfolders</param>
         /// <param name="folderName">folder name for searching subfolders</param>
         /// <returns>list of sub folders that matches the folderName</returns>
-        private List<MailFolder> GetMatchingSubFolders(string operationName, MailFolder rootFolder, string folderName)
+        private IEnumerable<IMailFolder> GetMatchingSubFolders(string operationName, IMailFolder rootFolder, string folderName)
         {
-            List<MailFolder> matchingFolders = new List<MailFolder>();
-            MailFolders subFolders = rootFolder.GetSubFolders();
+            var subFolders = rootFolder.SubFolders;
 
-            if (subFolders.Count == 0)
+            if (subFolders.Any() == false)
             {
-                Log.Out(Log.Severity.Warning, operationName, "No subfolder in folder {0}", rootFolder.Name);
+                Log.Out(Log.Severity.Warning, operationName, "No subfolders in folder {0}", rootFolder.Name);
             }
 
-            foreach (MailFolder folder in subFolders)
-            {
-                // we just copy all the folders to the list if folderName is not specified
-                if (string.IsNullOrEmpty(folderName) || folder.Name.Contains(folderName))
-                {
-                    matchingFolders.Add(folder);
-                }
-            }
+            folderName = folderName ?? string.Empty;
 
-            return matchingFolders;
+            return subFolders.Where(x => x.Name.Contains(folderName));
         }
-
-
-        /// <summary>
-        /// This method finds all the mails that match the given subject
-        /// </summary>
-        /// <param name="mails">mails to search for</param>
-        /// <param name="subject">subject to match</param>
-        /// <returns>list of matched mails</returns>
-        private List<MailItem> FindMailWithSubject(MailItems mails, string subject)
-        {
-            List<MailItem> matchingMails = new List<MailItem>();
-
-            // loops thru each mail item to find the matching subject ones
-            foreach (MailItem item in mails)
-            {
-                if (string.IsNullOrEmpty(subject) || item.Subject.Contains(subject))
-                {
-                    matchingMails.Add(item);
-                }
-            }
-
-            return matchingMails;
-        }
-
 
         /// <summary>
         /// This method updates the registry to turn on/off Outlook prompts.

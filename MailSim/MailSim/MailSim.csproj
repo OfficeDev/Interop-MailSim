@@ -32,7 +32,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>MailSim_gray_310h.ico</ApplicationIcon>
+    <ApplicationIcon>
+    </ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.Office.Interop.Outlook, Version=15.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
@@ -48,21 +49,23 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ConfigurationFile.cs" />
+    <Compile Include="Contracts\IAddressBook.cs" />
+    <Compile Include="Contracts\IMailFolder.cs" />
+    <Compile Include="Contracts\IMailItem.cs" />
+    <Compile Include="Contracts\IMailStore.cs" />
     <Compile Include="ExecuteSequence.cs" />
     <Compile Include="Log.cs" />
-    <Compile Include="MailConnection.cs" />
-    <Compile Include="MailFolder.cs" />
-    <Compile Include="MailFolders.cs" />
-    <Compile Include="MailItem.cs" />
-    <Compile Include="MailItems.cs" />
     <Compile Include="MailSimMain.cs" />
     <Compile Include="MailSimTest.cs" />
-    <Compile Include="MailStore.cs" />
-    <Compile Include="OLAddressList.cs" />
     <Compile Include="Operations.cs">
       <DependentUpon>Operations.xsd</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ProviderFactory.cs" />
+    <Compile Include="ProvidersOM\AddressBookProviderOM.cs" />
+    <Compile Include="ProvidersOM\MailFolderProviderOM.cs" />
+    <Compile Include="ProvidersOM\MailItemProviderOM.cs" />
+    <Compile Include="ProvidersOM\MailStoreProviderOM.cs" />
     <Compile Include="Sequence.cs">
       <DependentUpon>Sequence.xsd</DependentUpon>
     </Compile>
