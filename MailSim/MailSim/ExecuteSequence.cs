@@ -736,7 +736,9 @@ namespace MailSim
             try
             {
                 // gets the default Outlook folder
-                IMailFolder folder = olMailStore.GetDefaultFolder(operation.Folder);
+                //IMailFolder folder = olMailStore.GetDefaultFolder(operation.Folder);
+                // gets the target folder for the event based on the path provided.
+                IMailFolder folder = olMailStore.FindFolder(operation.Folder);
                 if (folder == null)
                 {
                     Log.Out(Log.Severity.Error, operation.OperationName, "Unable to retrieve folder {0}",

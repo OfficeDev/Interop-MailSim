@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using Outlook = Microsoft.Office.Interop.Outlook;
 using MailSim.Contracts;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 
 namespace MailSim.ProvidersOM
 {
@@ -189,9 +190,50 @@ namespace MailSim.ProvidersOM
             if (_outlook != null && !_keepOutlookRunning)
             {
                 Console.WriteLine("Exiting Outlook");
- 
+
                 ((Outlook._Application)_outlook).Quit();
             }
         }
+
+
+        /// <summary>
+        /// Finds the Global Address List associated with the MailStore
+        /// </summary>
+        /// <param name="folderPath">parameter for FindFolder</param>
+        /// <returns>IMailFolder for the target of the event</returns>
+        /// In this case the Folder element is a path in Outlook. Each component of the path separated by '\'.
+        /// The first or default folder in the path, can be preceded by "\\" or nothing. If it's the only part of
+        /// the path, then it MUST be one of the default OL folders (see the schema for the EventMonitor operation). 
+        public IMailFolder FindFolder(string folderPath)
+        {
+            IMailFolder folder;
+            string backslash = @"\";
+            try
+            {
+                if (folderPath.StartsWith(@"\\"))
+                {
+                    folderPath = folderPath.Remove(0, 2);
+                }
+                String[] folders =
+                    folderPath.Split(backslash.ToCharArray());
+                folder =
+                    GetDefaultFolder(folders[0]);
+
+                if (folder != null)
+                {
+                    for (int i = 1; i <= folders.GetUpperBound(0); i++)
+                    {
+                        IEnumerable<IMailFolder> subFolders = folder.SubFolders;
+                        folder = subFolders.First(fld => fld.Name == folders[i]);
+                        if (folder == null)
+                        {
+                            return null;
+                        }
+                    }
+                }
+                return folder;
+            }
+            catch { return null; }
+        }        
     }
 }
