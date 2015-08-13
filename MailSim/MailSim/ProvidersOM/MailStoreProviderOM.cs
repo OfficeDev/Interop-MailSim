@@ -207,7 +207,7 @@ namespace MailSim.ProvidersOM
         public IMailFolder FindFolder(string folderPath)
         {
             IMailFolder folder;
-            string backslash = @"\";
+            System.Char backslash = '\\';
             try
             {
                 if (folderPath.StartsWith(@"\\"))
@@ -215,16 +215,16 @@ namespace MailSim.ProvidersOM
                     folderPath = folderPath.Remove(0, 2);
                 }
                 String[] folders =
-                    folderPath.Split(backslash.ToCharArray());
+                    folderPath.Split(backslash);
                 folder =
                     GetDefaultFolder(folders[0]);
 
                 if (folder != null)
                 {
-                    for (int i = 1; i <= folders.GetUpperBound(0); i++)
+                    for (int i = 1; i <= folders.Length-1; i++)
                     {
                         IEnumerable<IMailFolder> subFolders = folder.SubFolders;
-                        folder = subFolders.First(fld => fld.Name == folders[i]);
+                        folder = subFolders.FirstOrDefault(fld => fld.Name.Equals(folders[i], StringComparison.CurrentCultureIgnoreCase));
                         if (folder == null)
                         {
                             return null;
