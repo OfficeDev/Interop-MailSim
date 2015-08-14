@@ -64,6 +64,11 @@ namespace MailSim
                 }
 
                 logFileLocation = fileLocation;
+
+                if (logFileLocation.EndsWith("\\") == false)
+                {
+                    logFileLocation += '\\';
+                }
             }
 
             logFileName = logFileLocation + System.DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss") + " " + Environment.MachineName + " " + Path.GetFileName(seqFileName);

@@ -961,8 +961,10 @@ namespace MailSim
 
                 int randCount = Convert.ToInt32(randomAtt.Count);
 
+                string dir = randomAtt.Value.Trim();
+
                 // makes sure the folder exists
-                if (!Directory.Exists(randomAtt.Value))
+                if (!Directory.Exists(dir))
                 {
                     Log.Out(Log.Severity.Error, name, "Directory {0} doesn't exist, skipping attachment",
                         randomAtt.Value);
@@ -970,7 +972,7 @@ namespace MailSim
                 }
 
                 // queries all the files and randomly pick the attachment
-                string[] files = Directory.GetFiles(randomAtt.Value);
+                string[] files = Directory.GetFiles(dir);
                 int fileNumber;
 
                 // if Count is 0, it will attach a random number of attachments
