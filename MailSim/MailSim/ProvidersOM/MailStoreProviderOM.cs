@@ -208,32 +208,28 @@ namespace MailSim.ProvidersOM
         {
             IMailFolder folder;
             System.Char backslash = '\\';
-            try
+            if (folderPath.StartsWith(@"\\"))
             {
-                if (folderPath.StartsWith(@"\\"))
-                {
-                    folderPath = folderPath.Remove(0, 2);
-                }
-                String[] folders =
-                    folderPath.Split(backslash);
-                folder =
-                    GetDefaultFolder(folders[0]);
+                folderPath = folderPath.Remove(0, 2);
+            }
+            String[] folders =
+                folderPath.Split(backslash);
+            folder =
+                GetDefaultFolder(folders[0]);
 
-                if (folder != null)
+            if (folder != null)
+            {
+                for (int i = 1; i <= folders.Length - 1; i++)
                 {
-                    for (int i = 1; i <= folders.Length-1; i++)
+                    IEnumerable<IMailFolder> subFolders = folder.SubFolders;
+                    folder = subFolders.FirstOrDefault(fld => fld.Name.Equals(folders[i], StringComparison.CurrentCultureIgnoreCase));
+                    if (folder == null)
                     {
-                        IEnumerable<IMailFolder> subFolders = folder.SubFolders;
-                        folder = subFolders.FirstOrDefault(fld => fld.Name.Equals(folders[i], StringComparison.CurrentCultureIgnoreCase));
-                        if (folder == null)
-                        {
-                            return null;
-                        }
+                        return null;
                     }
                 }
-                return folder;
             }
-            catch { return null; }
-        }        
+            return folder;
+        }
     }
 }
