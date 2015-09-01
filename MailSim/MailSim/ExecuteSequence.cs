@@ -727,16 +727,19 @@ namespace MailSim
 
         /// <summary>
         /// This method registers events to monitor folders
-        /// We only support default Outlook folders
+        /// The EventMonitor supports default Outlook folders and subfolders via a path (see below)
         /// </summary>
         /// <param name="operation">parameters for EventMonitor</param>
         /// <returns></returns>
+        /// In this case the Folder element is a path in Outlook. Each component of the path separated by '\'.
+        /// The first or default folder in the path, can be preceded by "\\" or nothing. If it's the only part of
+        /// the path, then it MUST be one of the default OL folders (see the schema for the EventMonitor operation). 
         private bool EventMonitor(MailSimOperationsEventMonitor operation)
         {
             try
             {
-                // gets the default Outlook folder
-                IMailFolder folder = olMailStore.GetDefaultFolder(operation.Folder);
+                // gets the target folder for the event based on the path provided.
+                IMailFolder folder = olMailStore.FindFolder(operation.Folder);
                 if (folder == null)
                 {
                     Log.Out(Log.Severity.Error, operation.OperationName, "Unable to retrieve folder {0}",

@@ -24,6 +24,12 @@ namespace MailSim.Contracts
         /// <returns>IMailFolder object that includes all Folders on top level folder layer</returns>
         IMailFolder RootFolder { get; }
         /// <summary>
+        /// Returns a folder identified a "path"
+        /// </summary>
+        /// <param name="path">String representing the path to a folder. </param>
+        /// <returns>MailFolder object or null if the path isn't found</returns>
+        IMailFolder FindFolder(string path);
+        /// <summary>
         /// Returns one of "Default" folders in the mailbox
         /// For list of possible folders refer to
         /// https://msdn.microsoft.com/en-us/library/office/microsoft.office.interop.outlook.oldefaultfolders(v=vs.15).aspx

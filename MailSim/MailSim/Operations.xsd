@@ -282,14 +282,17 @@
           <xs:element name="EventMonitor">
             <xs:complexType>
               <xs:sequence>
-              <!--List of Outlook default folders supported in MailSim: 
+              <!--
+              The Folder element is a path in Outlook. Each component of the path separated by '\'.
+              The first or default folder in the path, can be preceded by "\\" or nothing.
+              List of Outlook default folders supported in MailSim: 
 
                       olFolderInbox
-                      olFolderDeletedItems
                       olFolderDrafts
                       olFolderJunk
                       olFolderOutbox
                       olFolderSentMail
+                      olFolderDeletedItems
 
                 The full list that Outlook supports can be referenced here: 
                 http://msdn.microsoft.com/en-us/library/office/microsoft.office.interop.outlook.oldefaultfolders%28v=office.15%29.aspx--> 
