@@ -2,8 +2,8 @@
 <MailSimOperations>
 
   <MailSend OperationName="MailSendTo2Recipients2Attachments" Sleep="10">
-    <Recipients>Andrew Davidoff</Recipients>
-    <Recipients>Bob Mailsim</Recipients>
+    <Recipient>Andrew Davidoff</Recipient>
+    <Recipient>Bob Mailsim</Recipient>
     <Subject>Test</Subject>
     <Body>Test message body</Body>
     <Attachment>C:\SW\MailSimRun\sequence.xml</Attachment>
@@ -20,7 +20,7 @@
   </MailSend>
 
   <MailSend OperationName="MailSendToMyself" Sleep="5">
-    <Recipients>Andrew Davidoff</Recipients>
+    <Recipient>Andrew Davidoff</Recipient>
   </MailSend>
 
   <MailDelete OperationName="MailDelete2Items" Count="2" Sleep="5">

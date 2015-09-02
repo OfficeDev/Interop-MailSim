@@ -1,21 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-using MailSim.Contracts;
-using MailSim.ProvidersOM;
+﻿using MailSim.Common.Contracts;
 
 namespace MailSim
 {
+    // TODO: Define the provider selection via config file
     class ProviderFactory
     {
-        public static IMailStore CreateMailStore(string mailboxName, MailSimSequence seq=null)
+        public static IMailStore CreateMailStore(string mailboxName, MailSimSequence seq = null)
         {
-            // Opens connection to Outlook with default profile, starts Outlook if it is not running
-            // Note: Currently only the default MailStore is supported.
-            return new MailStoreProviderOM(mailboxName, seq == null ? false : seq.DisableOutlookPrompt);
+            if (true)
+            {
+                return new ProvidersOM.MailStoreProviderOM(mailboxName, seq == null ? false : seq.DisableOutlookPrompt);
+            }
+            else
+            {
+//                return new ProvidersREST.MailStoreProviderSDK();
+                return new ProvidersREST.MailStoreProviderHTTP();
+            }
         }
     }
 }
