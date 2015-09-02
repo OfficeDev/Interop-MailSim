@@ -64,6 +64,11 @@ namespace MailSim
                 }
 
                 logFileLocation = fileLocation;
+
+                if (logFileLocation.EndsWith("\\") == false)
+                {
+                    logFileLocation += '\\';
+                }
             }
 
             logFileName = logFileLocation + System.DateTime.Now.ToString("yyyy-MM-dd HH-mm-ss") + " " + Environment.MachineName + " " + Path.GetFileName(seqFileName);
@@ -83,6 +88,7 @@ namespace MailSim
             {
                 logWriter.WriteLine("</" + Process.GetCurrentProcess().ProcessName + ">");
                 logWriter.Close();
+                logWriter = null;
             }
         }
 
@@ -120,7 +126,7 @@ namespace MailSim
             Console.ResetColor();
 
             // writes to the log file
-            if (!string.IsNullOrEmpty(logFileName))
+            if (!string.IsNullOrEmpty(logFileName) && logWriter != null)
             {
                 XElement element = new XElement(type.ToString(),
                     new XAttribute("Name", name),

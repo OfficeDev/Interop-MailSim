@@ -76,10 +76,10 @@ namespace MailSim
                     return;
                 }
 
-                ExecuteSequence exeSeq = new ExecuteSequence(seq);
-
                 // initializes logging
                 Log.LogFileLocation(seq.LogFileLocation);
+
+                ExecuteSequence exeSeq = new ExecuteSequence(seq);
 
                 exeSeq.Execute();
             }
