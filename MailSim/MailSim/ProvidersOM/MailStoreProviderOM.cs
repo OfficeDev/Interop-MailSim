@@ -1,24 +1,27 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 
 using Outlook = Microsoft.Office.Interop.Outlook;
 using MailSim.Contracts;
 using System.Diagnostics;
-using System.Text.RegularExpressions;
+using Microsoft.Win32;
 
 namespace MailSim.ProvidersOM
 {
     class MailStoreProviderOM : IMailStore
     {
-        private Outlook.Store _store;
-        private Outlook.Account _userAccount;
+        private const string OfficeVersion = "15.0";
+        private const string OfficePolicyRegistryRoot = @"Software\Policies\Microsoft\Office\" + OfficeVersion;
+        private const string OutlookPolicyRegistryRoot = OfficePolicyRegistryRoot + @"\Outlook";
+
+        private readonly Outlook.Store _store;
+        private readonly Outlook.Account _userAccount;
         private Outlook.Application _outlook;
         private bool _keepOutlookRunning = false;
-        private Lazy<IMailFolder> _rootFolder;
+        private readonly bool _disableOutlookPrompt;
+        private readonly Lazy<IMailFolder> _rootFolder;
 
         private Dictionary<string, Outlook.OlDefaultFolders> _folderTypes = new Dictionary<string, Outlook.OlDefaultFolders>
         {
@@ -30,8 +33,15 @@ namespace MailSim.ProvidersOM
             {"olFolderSentMail", Outlook.OlDefaultFolders.olFolderSentMail},
         };
 
-        internal MailStoreProviderOM(string mailboxName)
+        internal MailStoreProviderOM(string mailboxName, bool disableOutlookPrompt)
         {
+            _disableOutlookPrompt = disableOutlookPrompt;
+
+            if (_disableOutlookPrompt)
+            {
+                ConfigOutlookPrompts(false);
+            }
+
             ConnectToOutlook();
 
             if (mailboxName != null)
@@ -186,11 +196,17 @@ namespace MailSim.ProvidersOM
 
         ~MailStoreProviderOM()
         {
+            // Restore the Outlook prompt if needed 
+            if (_disableOutlookPrompt == true)
+            {
+                ConfigOutlookPrompts(true);
+            }
+
             // Closes the Outlook process
             if (_outlook != null && !_keepOutlookRunning)
             {
                 Console.WriteLine("Exiting Outlook");
-
+ 
                 ((Outlook._Application)_outlook).Quit();
             }
         }
@@ -212,10 +228,8 @@ namespace MailSim.ProvidersOM
             {
                 folderPath = folderPath.Remove(0, 2);
             }
-            String[] folders =
-                folderPath.Split(backslash);
-            folder =
-                GetDefaultFolder(folders[0]);
+            String[] folders = folderPath.Split(backslash);
+            folder = GetDefaultFolder(folders[0]);
 
             if (folder != null)
             {
@@ -230,6 +244,51 @@ namespace MailSim.ProvidersOM
                 }
             }
             return folder;
+        }
+
+        /// <summary>
+        /// This method updates the registry to turn on/off Outlook prompts.
+        /// This is documented in http://support.microsoft.com/kb/926512
+        /// </summary>
+        /// <param name="show">True to enable Outlook prompts, False to disable Outlook prompts.</param>
+        private static void ConfigOutlookPrompts(bool show)
+        {
+            const string olSecurityKey = @"HKEY_CURRENT_USER\" + OutlookPolicyRegistryRoot + @"\Security";
+            const string adminSecurityMode = "AdminSecurityMode";
+            const string addressBookAccess = "PromptOOMAddressBookAccess";
+            const string addressInformationAccess = "PromptOOMAddressInformationAccess";
+            const string saveAs = "PromptOOMSaveAs";
+            const string customAction = "PromptOOMCustomAction";
+            const string send = "PromptOOMSend";
+            const string meetingRequestResponse = "PromptOOMMeetingTaskRequestResponse";
+
+            try
+            {
+                if (show == true)
+                {
+                    Registry.SetValue(olSecurityKey, adminSecurityMode, (int)0);
+                    Registry.SetValue(olSecurityKey, addressBookAccess, (int)1);
+                    Registry.SetValue(olSecurityKey, addressInformationAccess, (int)1);
+                    Registry.SetValue(olSecurityKey, customAction, (int)1);
+                    Registry.SetValue(olSecurityKey, saveAs, (int)1);
+                    Registry.SetValue(olSecurityKey, send, (int)1);
+                    Registry.SetValue(olSecurityKey, meetingRequestResponse, (int)1);
+                }
+                else
+                {
+                    Registry.SetValue(olSecurityKey, adminSecurityMode, (int)3);
+                    Registry.SetValue(olSecurityKey, addressBookAccess, (int)2);
+                    Registry.SetValue(olSecurityKey, addressInformationAccess, (int)2);
+                    Registry.SetValue(olSecurityKey, customAction, (int)2);
+                    Registry.SetValue(olSecurityKey, saveAs, (int)2);
+                    Registry.SetValue(olSecurityKey, send, (int)2);
+                    Registry.SetValue(olSecurityKey, meetingRequestResponse, (int)2);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Out(Log.Severity.Error, "", "Unable to change registry, you may want to run this as Administrator\n" + ex.ToString());
+            }
         }
     }
 }

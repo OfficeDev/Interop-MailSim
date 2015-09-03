@@ -11,7 +11,6 @@ using System.IO;
 using System.Collections.Generic;
 using System.Threading;
 using System.Xml;
-using Microsoft.Win32;
 using System.Linq;
 
 using MailSim.Contracts;
@@ -20,15 +19,11 @@ namespace MailSim
 {
     class ExecuteSequence
     {
-        private MailSimSequence sequence;
+        private readonly MailSimSequence sequence;
         private MailSimOperations operations;
         private XmlDocument operationXML;
-        private IMailStore olMailStore;
-        private Random randomNum;
-
-        private const string OfficeVersion = "15.0";
-        private const string OfficePolicyRegistryRoot = @"Software\Policies\Microsoft\Office\" + OfficeVersion;
-        private const string OutlookPolicyRegistryRoot = OfficePolicyRegistryRoot + @"\Outlook";
+        private readonly IMailStore olMailStore;
+        private readonly Random randomNum = new Random();
 
         private const string Recipients = "Recipients";
         private const string RandomRecipients = "RandomRecipients";
@@ -37,7 +32,7 @@ namespace MailSim
         private const int MaxNumberOfRandomFolder = 100;
         private const string StopFileName = "stop.txt";
 
-        private List<IMailFolder> FolderEventList = new List<IMailFolder>();
+        private readonly List<IMailFolder> FolderEventList = new List<IMailFolder>();
         private IDictionary<Type, Func<object, bool>> typeFuncs = new Dictionary<Type, Func<object, bool>>();
 
         private string DefaultInboxMonitor = "DefaultInboxMonitor";
@@ -59,24 +54,13 @@ namespace MailSim
             typeFuncs[typeof(MailSimOperationsFolderDelete)] = (oper) => FolderDelete((MailSimOperationsFolderDelete)oper);
             typeFuncs[typeof(MailSimOperationsEventMonitor)] = (oper) => EventMonitor((MailSimOperationsEventMonitor)oper);
 
-            if (seq != null)
+            sequence = seq;
+
+            if (sequence != null)
             {
                 try
                 {
-                    sequence = seq;
-
-                    // Disables the Outlook security prompt if specified
-                    if (sequence.DisableOutlookPrompt == true)
-                    {
-                        ConfigOutlookPrompts(false);
-                    }
-
-                    // Openes connection to Outlook with default profile, starts Outlook if it is not running
-                    // Note: Currently only the default MailStore is supported.
-                    olMailStore = ProviderFactory.CreateMailStore(null);
-
-                    // Initializes a random number
-                    randomNum = new Random();
+                    olMailStore = ProviderFactory.CreateMailStore(null, sequence);
                 }
                 catch (Exception)
                 {
@@ -85,22 +69,6 @@ namespace MailSim
                 }
             }
         }
-
-        /// <summary>
-        /// Destructor
-        /// </summary>
-        ~ExecuteSequence()
-        {
-            if (sequence == null)
-                return;
-
-            // Restore the Outlook prompt if needed 
-            if (sequence.DisableOutlookPrompt == true)
-            {
-                ConfigOutlookPrompts(true);
-            }
-        }
-
 
         /// <summary>
         /// This method unregisters event 
@@ -114,7 +82,6 @@ namespace MailSim
             }
 
             FolderEventList.Clear();
-
         }
 
 
@@ -248,40 +215,24 @@ namespace MailSim
 
             for (int count = 1; count <= iterations; count++)
             {
-                List<string> recipients = GetRecipients(operation.OperationName, operation.RecipientType, operation.Recipients);
-
-                if (recipients == null)
-                {
-                    Log.Out(Log.Severity.Error, operation.OperationName, "Recipient is not specified, skipping the operation");
-                    return false;
-                }
-
-                List<string> attachments = GetAttachments(operation.OperationName, operation.Attachments);
-
                 try
                 {
                     // generates a new email
                     IMailItem mail = olMailStore.NewMailItem();
 
-                    mail.Subject = mail.Body = System.DateTime.Now.ToString() + " - ";
+                    mail.Subject = DateTime.Now.ToString() + " - ";
                     mail.Subject += (string.IsNullOrEmpty(operation.Subject)) ? DefaultSubject : operation.Subject;
                     Log.Out(Log.Severity.Info, operation.OperationName, "Subject: {0}", mail.Subject);
-                    mail.Body += (string.IsNullOrEmpty(operation.Body)) ? DefaultBody : operation.Body;
+
+                    mail.Body = BuildBody(operation.Body);
                     Log.Out(Log.Severity.Info, operation.OperationName, "Body: {0}", mail.Body);
 
-                    // Adds all recipients
-                    foreach (string recpt in recipients)
+                    if (!AddRecipients(mail, operation))
                     {
-                        Log.Out(Log.Severity.Info, operation.OperationName, "Recipient: {0}", recpt);
-                        mail.AddRecipient(recpt);
+                        return false;
                     }
 
-                    // processes the attachment
-                    foreach (string attmt in attachments)
-                    {
-                        Log.Out(Log.Severity.Info, operation.OperationName, "Attachment: {0}", attmt);
-                        mail.AddAttachment(attmt);
-                    }
+                    AddAttachments(mail, operation);
 
                     mail.Send();
                 }
@@ -298,6 +249,14 @@ namespace MailSim
         }
 
 
+        private ParsedOperation ParseOperation(dynamic op, string folder, string subject)
+        {
+            // Retrieves mails from Outlook
+            IEnumerable<IMailItem> mails = GetMails(op.OperationName, folder, subject);
+
+            return new ParsedOperation(op, mails.ToList());
+        }
+
         /// <summary>
         /// This method deletes mail according to the parameter 
         /// </summary>
@@ -305,62 +264,18 @@ namespace MailSim
         /// <returns>true if processed successfully, false otherwise</returns>
         private bool MailDelete(MailSimOperationsMailDelete operation)
         {
-            int iterations = GetIterationCount(operation.Count);
-            bool random = false;
+            var parsedOp = ParseOperation(operation, operation.Folder, operation.Subject);
 
-            try
+            return parsedOp.Iterate((indexToDelete, mails) =>
             {
-                // Retrieves mails from Outlook
-                var mails = GetMails(operation.OperationName, operation.Folder, operation.Subject).ToList();
-                if (mails.Any() == false)
-                {
-                    Log.Out(Log.Severity.Error, operation.OperationName, "Skipping MailDelete");
-                    return false;
-                }
-
-                // Randomly generate the number of emails to delete 
-                if (iterations == 0)
-                {
-                    random = true;
-                    iterations = randomNum.Next(1, mails.Count + 1);
-                    Log.Out(Log.Severity.Info, operation.OperationName, "Randomly deleting {0} emails", iterations);
-                }
-
-                // we need to make sure we are not deleting more than what we have in the mailbox
-                if (iterations > mails.Count)
-                {
-                    Log.Out(Log.Severity.Warning, operation.OperationName,
-                        "Only {1} email(s) are in the folder, so the number of emails to delete is adjusted from {0} to {1}",
-                        iterations, mails.Count);
-                    iterations = mails.Count;
-                }
-
-                for (int count = 1; count <= iterations; count++)
-                {
-                    Log.Out(Log.Severity.Info, operation.OperationName, "Starting iteration {0}", count);
-
-                    // just delete the email in order if random is not selected,
-                    // otherwise randomly pick the mail to delete
-                    int indexToDelete = random ? randomNum.Next(0, mails.Count) : mails.Count - 1;
-
-                    Log.Out(Log.Severity.Info, operation.OperationName, "Deleting email with subject: {0}", mails[indexToDelete].Subject);
-                    mails[indexToDelete].Delete();
-                    mails.RemoveAt(indexToDelete);
-
-                    SleepOrStop(operation.OperationName, operation.Sleep);
-
-                    Log.Out(Log.Severity.Info, operation.OperationName, "Finished iteration {0}", count);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Out(Log.Severity.Error, operation.OperationName, "Exception encountered\n" + ex);
-                return false;
-            }
-
-            return true;
+                var item = mails[indexToDelete];
+                Log.Out(Log.Severity.Info, operation.OperationName, "Deleting email with subject: {0}", item.Subject);
+                
+                item.Delete();
+                mails.RemoveAt(indexToDelete);
+                return true;
+            });
         }
-
 
         /// <summary>
         /// This method replies email according to the parameters
@@ -369,77 +284,24 @@ namespace MailSim
         /// <returns>true if processed successfully, false otherwise</returns>
         private bool MailReply(MailSimOperationsMailReply operation)
         {
-            int iterations = GetIterationCount(operation.Count);
-            bool random = false;
+            var parsedOp = ParseOperation(operation, operation.Folder, operation.MailSubjectToReply);
 
-            try
+            return parsedOp.Iterate((indexToReply, mails) =>
             {
-                // retrieves mails from Outlook
-                var mails = GetMails(operation.OperationName, operation.Folder, operation.MailSubjectToReply).ToList();
-                if (mails.Any() == false)
-                {
-                    Log.Out(Log.Severity.Error, operation.OperationName, "Skipping MailReply");
-                    return false;
-                }
+                IMailItem mailToReply = mails[indexToReply].Reply(operation.ReplyAll);
 
-                // randomly generate the number of emails to reply 
-                if (iterations == 0)
-                {
-                    random = true;
-                    iterations = randomNum.Next(1, mails.Count + 1);
-                    Log.Out(Log.Severity.Info, operation.OperationName, "Randomly replying {0} emails", iterations);
-                }
+                Log.Out(Log.Severity.Info, operation.OperationName, "Subject: {0}", mailToReply.Subject);
 
-                // we need to make sure we are not replying more than what we have in the mailbox
-                if (iterations > mails.Count)
-                {
-                    Log.Out(Log.Severity.Warning, operation.OperationName,
-                        "Only {1} email(s) are in the folder, so the number of emails to reply is adjusted from {0} to {1}",
-                        iterations, mails.Count);
-                    iterations = mails.Count;
-                }
+                mailToReply.Body = BuildBody(operation.ReplyBody) + mailToReply.Body;
+                Log.Out(Log.Severity.Info, operation.OperationName, "Body: {0}", mailToReply.Body);
 
-                for (int count = 1; count <= iterations; count++)
-                {
-                    Log.Out(Log.Severity.Info, operation.OperationName, "Starting iteration {0}", count);
+                // process the attachment
+                AddAttachments(mailToReply, operation);
 
-                    List<string> attachments = GetAttachments(operation.OperationName, operation.Attachments);
-
-                    // just reply the email in order if random is not selected,
-                    // otherwise randomly pick the mail to reply
-                    int indexToReply = random ? randomNum.Next(0, mails.Count) : count - 1;
-                    IMailItem mailToReply = mails[indexToReply].Reply(operation.ReplyAll);
-
-                    Log.Out(Log.Severity.Info, operation.OperationName, "Subject: {0}", mailToReply.Subject);
-
-                    mailToReply.Body = System.DateTime.Now.ToString() + " - " +
-                        ((string.IsNullOrEmpty(operation.ReplyBody)) ? DefaultBody : operation.ReplyBody) +
-                        mailToReply.Body;
-                    Log.Out(Log.Severity.Info, operation.OperationName, "Body: {0}", mailToReply.Body);
-
-                    // process the attachment
-                    foreach (string attmt in attachments)
-                    {
-                        Log.Out(Log.Severity.Info, operation.OperationName, "Attachment: {0}", attmt);
-                        mailToReply.AddAttachment(attmt);
-                    }
-
-                    mailToReply.Send();
-
-                    SleepOrStop(operation.OperationName, operation.Sleep);
-
-                    Log.Out(Log.Severity.Info, operation.OperationName, "Finished iteration {0}", count);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Out(Log.Severity.Error, operation.OperationName, "Exception encountered\n" + ex);
-                return false;
-            }
-
-            return true;
+                mailToReply.Send();
+                return true;
+            });
         }
-
 
         /// <summary>
         /// This method forwards emails according to the parameters
@@ -448,92 +310,29 @@ namespace MailSim
         /// <returns>true if processed successfully, false otherwise</returns>
         private bool MailForward(MailSimOperationsMailForward operation)
         {
-            int iterations = GetIterationCount(operation.Count);
-            bool random = false;
- 
-            try
+            var parsedOp = ParseOperation(operation, operation.Folder, operation.MailSubjectToForward);
+
+            return parsedOp.Iterate((indexToForward, mails) =>
             {
-                // retrieves mails from Outlook
-                var mails = GetMails(operation.OperationName, operation.Folder, operation.MailSubjectToForward).ToList();
-                if (mails.Any() == false)
+                IMailItem mailToForward = mails[indexToForward].Forward();
+
+                Log.Out(Log.Severity.Info, operation.OperationName, "Subject: {0}", mailToForward.Subject);
+
+                mailToForward.Body = BuildBody(operation.ForwardBody) + mailToForward.Body;
+
+                Log.Out(Log.Severity.Info, operation.OperationName, "Body: {0}", mailToForward.Body);
+
+                if (!AddRecipients(mailToForward, operation))
                 {
-                    Log.Out(Log.Severity.Error, operation.OperationName, "Skipping MailForward");
                     return false;
                 }
 
-                // randomly generates the number of emails to forward 
-                if (iterations == 0)
-                {
-                    random = true;
-                    iterations = randomNum.Next(1, mails.Count + 1);
-                    Log.Out(Log.Severity.Info, operation.OperationName, "Randomly forwarding {0} emails", iterations);
-                }
+                AddAttachments(mailToForward, operation);
 
-                // we need to make sure we are not forwarding more than what we have in the mailbox
-                if (iterations > mails.Count)
-                {
-                    Log.Out(Log.Severity.Warning, operation.OperationName,
-                        "Only {1} email(s) are in the folder, so the the number of emails to forward is adjusted from {0} to {1}",
-                        iterations, mails.Count);
-                    iterations = mails.Count;
-                }
-
-                for (int count = 1; count <= iterations; count++)
-                {
-                    Log.Out(Log.Severity.Info, operation.OperationName, "Starting iteration {0}", count);
-
-                    List<string> recipients = GetRecipients(operation.OperationName, operation.RecipientType, operation.Recipients);
-
-                    if (recipients == null)
-                    {
-                        Log.Out(Log.Severity.Error, operation.OperationName, "Recipient is not specified, skipping operation");
-                        return false;
-                    }
-
-                    List<string> attachments = GetAttachments(operation.OperationName, operation.Attachments);
-
-                    // just forward the email in order if random is not selected,
-                    // otherwise randomly pick the mail to forward
-                    int indexToForward = random ? randomNum.Next(0, mails.Count) : count - 1;
-                    IMailItem mailToForward = mails[indexToForward].Forward();
-
-                    Log.Out(Log.Severity.Info, operation.OperationName, "Subject: {0}", mailToForward.Subject);
-
-                    mailToForward.Body = System.DateTime.Now.ToString() + " - " +
-                        ((string.IsNullOrEmpty(operation.ForwardBody)) ? DefaultBody : operation.ForwardBody) +
-                        mailToForward.Body;
-                    Log.Out(Log.Severity.Info, operation.OperationName, "Body: {0}", mailToForward.Body);
-
-                    // adds all recipients
-                    foreach (string recpt in recipients)
-                    {
-                        Log.Out(Log.Severity.Info, operation.OperationName, "Recipient: {0}", recpt);
-                        mailToForward.AddRecipient(recpt);
-                    }
-
-                    // processes the attachment
-                    foreach (string attmt in attachments)
-                    {
-                        Log.Out(Log.Severity.Info, operation.OperationName, "Attachment: {0}", attmt);
-                        mailToForward.AddAttachment(attmt);
-                    }
-
-                    mailToForward.Send();
-
-                    SleepOrStop(operation.OperationName, operation.Sleep);
-
-                    Log.Out(Log.Severity.Info, operation.OperationName, "Finished iteration {0}", count);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Out(Log.Severity.Error, operation.OperationName, "Exception encountered\n" + ex);
-                return false;
-            }
-
-            return true;
+                mailToForward.Send();
+                return true;
+            });
         }
-
 
         /// <summary>
         /// This method moves emails according to the parameters
@@ -542,71 +341,28 @@ namespace MailSim
         /// <returns>true if processed successfully, false otherwise</returns>
         private bool MailMove(MailSimOperationsMailMove operation)
         {
-            int iterations = GetIterationCount(operation.Count);
-            bool random = false;
-
-            try
+            // gets the Outlook destination folder
+            IMailFolder destinationFolder = olMailStore.GetDefaultFolder(operation.DestinationFolder);
+            if (destinationFolder == null)
             {
-                // retrieves mails from Outlook
-                var mails = GetMails(operation.OperationName, operation.SourceFolder, operation.Subject).ToList();
-                if (mails.Any() == false)
-                {
-                    Log.Out(Log.Severity.Error, operation.OperationName, "Skipping MailMove");
-                    return false;
-                }
-
-                // randomly generates the number of emails to forward 
-                if (iterations == 0)
-                {
-                    random = true;
-                    iterations = randomNum.Next(1, mails.Count + 1);
-                    Log.Out(Log.Severity.Info, operation.OperationName, "Randomly moving {0} emails", iterations);
-                }
-
-                // we need to make sure we are not moving more than what we have in the mailbox
-                if (iterations > mails.Count)
-                {
-                    Log.Out(Log.Severity.Warning, operation.OperationName,
-                        "Only {1} email(s) are in the folder, so the number of emails to move is adjusted from {0} to {1}",
-                        iterations, mails.Count);
-                    iterations = mails.Count;
-                }
-
-                // gets the Outlook destination folder
-                IMailFolder destinationFolder = olMailStore.GetDefaultFolder(operation.DestinationFolder);
-                if (destinationFolder == null)
-                {
-                    Log.Out(Log.Severity.Error, operation.OperationName, "Unable to retrieve folder {0}",
-                        operation.DestinationFolder);
-                    return false;
-                }
-
-                for (int count = 1; count <= iterations; count++)
-                {
-                    Log.Out(Log.Severity.Info, operation.OperationName, "Starting iteration {0}", count);
-
-                    // just move the email in order if random is not selected,
-                    // otherwise randomly pick the mail to move
-                    int indexToCopy = random ? randomNum.Next(0, mails.Count) : mails.Count - 1;
-                    Log.Out(Log.Severity.Info, operation.OperationName, "Moving to {0}: {1}",
-                        operation.DestinationFolder, mails[indexToCopy].Subject);
-
-                    mails[indexToCopy].Move(destinationFolder);
-                    mails.RemoveAt(indexToCopy);
-
-                    SleepOrStop(operation.OperationName, operation.Sleep);
-
-                    Log.Out(Log.Severity.Info, operation.OperationName, "Finished iteration {0}", count);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Out(Log.Severity.Error, operation.OperationName, "Exception encountered\n" + ex);
+                Log.Out(Log.Severity.Error, operation.OperationName, "Unable to retrieve folder {0}",
+                    operation.DestinationFolder);
                 return false;
             }
-            return true;
-        }
 
+            var parsedOp = ParseOperation(operation, operation.SourceFolder, operation.Subject);
+
+            return parsedOp.Iterate((indexToMove, mails) =>
+            {
+                var item = mails[indexToMove];
+                Log.Out(Log.Severity.Info, operation.OperationName, "Moving to {0}: {1}",
+                    operation.DestinationFolder,item.Subject);
+
+                item.Move(destinationFolder);
+                mails.RemoveAt(indexToMove);
+                return true;
+            });
+        }
 
         /// <summary>
         /// This method creates folders according to the parameters
@@ -638,7 +394,7 @@ namespace MailSim
                 for (int count = 1; count <= iterations; count++)
                 {
                     Log.Out(Log.Severity.Info, operation.OperationName, "Starting iteration {0}", count);
-                    string newFolderName = System.DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss.fff") + " - " + operation.FolderName;
+                    string newFolderName = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss.fff") + " - " + operation.FolderName;
                     Log.Out(Log.Severity.Info, operation.OperationName, "Creating folder: {0}", newFolderName);
                     folder.AddSubFolder(newFolderName);
 
@@ -964,8 +720,10 @@ namespace MailSim
 
                 int randCount = Convert.ToInt32(randomAtt.Count);
 
+                string dir = randomAtt.Value.Trim();
+
                 // makes sure the folder exists
-                if (!Directory.Exists(randomAtt.Value))
+                if (!Directory.Exists(dir))
                 {
                     Log.Out(Log.Severity.Error, name, "Directory {0} doesn't exist, skipping attachment",
                         randomAtt.Value);
@@ -973,7 +731,7 @@ namespace MailSim
                 }
 
                 // queries all the files and randomly pick the attachment
-                string[] files = Directory.GetFiles(randomAtt.Value);
+                string[] files = Directory.GetFiles(dir);
                 int fileNumber;
 
                 // if Count is 0, it will attach a random number of attachments
@@ -1044,7 +802,7 @@ namespace MailSim
 
             if (mails.Any() == false)
             {
-                Log.Out(Log.Severity.Error, operationName, "No item in folder {0}", folder);
+                Log.Out(Log.Severity.Error, operationName, "No items in folder {0}", folder);
                 return mails;
             }
 
@@ -1083,69 +841,55 @@ namespace MailSim
             return subFolders.Where(x => x.Name.Contains(folderName));
         }
 
-        /// <summary>
-        /// This method updates the registry to turn on/off Outlook prompts.
-        /// This is documented in http://support.microsoft.com/kb/926512
-        /// </summary>
-        /// <param name="show">True to enable Outlook prompts, False to disable Outlook prompts.</param>
-        public void ConfigOutlookPrompts(bool show)
+        private bool AddRecipients(IMailItem mail, dynamic operation)
         {
-            const string olSecurityKey = @"HKEY_CURRENT_USER\" + OutlookPolicyRegistryRoot + @"\Security";
-            const string adminSecurityMode = "AdminSecurityMode";
-            const string addressBookAccess = "PromptOOMAddressBookAccess";
-            const string addressInformationAccess = "PromptOOMAddressInformationAccess";
-            const string saveAs = "PromptOOMSaveAs";
-            const string customAction = "PromptOOMCustomAction";
-            const string send = "PromptOOMSend";
-            const string meetingRequestResponse = "PromptOOMMeetingTaskRequestResponse";
+            List<string> recipients = GetRecipients(operation.OperationName, operation.RecipientType, operation.Recipients);
 
-            try
+            if (recipients == null)
             {
-                if (show == true)
-                {
-                    Registry.SetValue(olSecurityKey, adminSecurityMode, (int)0);
-                    Registry.SetValue(olSecurityKey, addressBookAccess, (int)1);
-                    Registry.SetValue(olSecurityKey, addressInformationAccess, (int)1);
-                    Registry.SetValue(olSecurityKey, customAction, (int)1);
-                    Registry.SetValue(olSecurityKey, saveAs, (int)1);
-                    Registry.SetValue(olSecurityKey, send, (int)1);
-                    Registry.SetValue(olSecurityKey, meetingRequestResponse, (int)1);
-                }
-                else
-                {
-                    Registry.SetValue(olSecurityKey, adminSecurityMode, (int)3);
-                    Registry.SetValue(olSecurityKey, addressBookAccess, (int)2);
-                    Registry.SetValue(olSecurityKey, addressInformationAccess, (int)2);
-                    Registry.SetValue(olSecurityKey, customAction, (int)2);
-                    Registry.SetValue(olSecurityKey, saveAs, (int)2);
-                    Registry.SetValue(olSecurityKey, send, (int)2);
-                    Registry.SetValue(olSecurityKey, meetingRequestResponse, (int)2);
-                }
+                Log.Out(Log.Severity.Error, operation.OperationName, "Recipient is not specified, skipping operation");
+                return false;
             }
-            catch (Exception ex)
+
+            // Add all recipients
+            foreach (string recpt in recipients)
             {
-                Log.Out(Log.Severity.Error, "", "Unable to change registry, you may want to run this as Administrator\n" + ex.ToString());
+                Log.Out(Log.Severity.Info, operation.OperationName, "Recipient: {0}", recpt);
+                mail.AddRecipient(recpt);
+            }
+
+            return true;
+        }
+
+        private void AddAttachments(IMailItem mail, dynamic operation)
+        {
+            List<string> attachments = GetAttachments(operation.OperationName, operation.Attachments);
+
+            foreach (string attmt in attachments)
+            {
+                Log.Out(Log.Severity.Info, operation.OperationName, "Attachment: {0}", attmt);
+                mail.AddAttachment(attmt);
             }
         }
 
-        private int GetIterationCount(string countString)
+        private string BuildBody(string templateBody)
         {
-            if (string.IsNullOrEmpty(countString))
-            {
-                return 1;
-            }
-
-            return Convert.ToInt32(countString);
+            string body = DateTime.Now.ToString() + " - " +
+                                ((string.IsNullOrEmpty(templateBody)) ? DefaultBody : templateBody);
+            return body;
         }
 
-        private string GetOperationName(object operation)
+        private static int GetIterationCount(string countString)
         {
-            dynamic op = operation;
-
-            return op.OperationName;
+            return string.IsNullOrEmpty(countString) ? 1 : Convert.ToInt32(countString);
         }
 
-        private void SleepOrStop(string name, string sleepSeconds)
+        private string GetOperationName(dynamic operation)
+        {
+            return operation.OperationName;
+        }
+
+        private static void SleepOrStop(string name, string sleepSeconds)
         {
             if (File.Exists(StopFileName))
             {
@@ -1158,6 +902,89 @@ namespace MailSim
                 int sleep = Convert.ToInt32(sleepSeconds);
                 Log.Out(Log.Severity.Info, name, "Sleeping for {0} seconds", sleep);
                 Thread.Sleep(sleep * 1000);
+            }
+        }
+
+        private class ParsedOperation
+        {
+            private const string TypePrefix = "MailSim.MailSimOperations";
+            private readonly Random _random = new Random();
+
+            internal ParsedOperation(dynamic operation, IList<IMailItem> mails)
+            {
+                Mails = mails;
+                Op = operation;
+
+                InitIterations();
+            }
+
+            private dynamic Op { get; set; }
+            private IList<IMailItem> Mails { get; set; }
+            private int Iterations { get; set; }
+            private bool IsRandom { get; set; }
+
+            private int GetNextIndex()
+            {
+                return IsRandom ? _random.Next(0, Mails.Count) : Mails.Count - 1;
+            }
+
+            private void InitIterations()
+            {
+                var name = Op.GetType().ToString();
+                name = name.Substring(TypePrefix.Length);
+                int mailCount = Mails.Count;
+
+                if (mailCount == 0)
+                {
+                    Log.Out(Log.Severity.Error, Op.OperationName, "Skipping " + name);
+                    Iterations = 0;
+                }
+                else
+                {
+                    Iterations = GetIterationCount(Op.Count);
+                    IsRandom = Iterations == 0;
+
+                    // Randomly generate the number of emails
+                    if (IsRandom)
+                    {
+                        Iterations = _random.Next(1, mailCount + 1);
+                        Log.Out(Log.Severity.Info, Op.OperationName, "Randomly applying {0} to {1} emails", name, Iterations);
+                    }
+                    // we need to make sure we are not deleting more than what we have in the mailbox
+                    else if (Iterations > mailCount)
+                    {
+                        Log.Out(Log.Severity.Warning, Op.OperationName,
+                            "Only {1} email(s) are found, so the number of emails to {2} is adjusted from {0} to {1}",
+                            Iterations, mailCount, name);
+                        Iterations = mailCount;
+                    }
+                }
+            }
+
+            internal bool Iterate(Func<int, IList<IMailItem>, bool> func)
+            {
+                for (int count = 1; count <= Iterations; count++)
+                {
+                    Log.Out(Log.Severity.Info, Op.OperationName, "Starting iteration {0}", count);
+
+                    try
+                    {
+                        if (!func(GetNextIndex(), Mails))
+                        {
+                            return false;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Out(Log.Severity.Error, Op.OperationName, "Exception encountered\n{0}", ex);
+                        return false;
+                    }
+
+                    SleepOrStop(Op.OperationName, Op.Sleep);
+                    Log.Out(Log.Severity.Info, Op.OperationName, "Finished iteration {0}", count);
+                }
+
+                return true;
             }
         }
     }

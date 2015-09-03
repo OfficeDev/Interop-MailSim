@@ -11,9 +11,11 @@ namespace MailSim
 {
     class ProviderFactory
     {
-        public static IMailStore CreateMailStore(string mailboxName)
+        public static IMailStore CreateMailStore(string mailboxName, MailSimSequence seq=null)
         {
-            return new MailStoreProviderOM(mailboxName);
+            // Opens connection to Outlook with default profile, starts Outlook if it is not running
+            // Note: Currently only the default MailStore is supported.
+            return new MailStoreProviderOM(mailboxName, seq == null ? false : seq.DisableOutlookPrompt);
         }
     }
 }
