@@ -11,7 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-
+using MailSim.Common;
 
 namespace MailSim
 {
@@ -30,7 +30,16 @@ namespace MailSim
                 if (args[0] == "/t")
                 {
                     MailSimTest testClass = new MailSimTest();
-                    testClass.Execute(args);
+                    
+                    try
+                    {
+                        testClass.Execute(args);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Out(Log.Severity.Error, string.Empty, "Exception: {0}", ex);
+                    }
+
                     Log.Out(Log.Severity.Info, "", "Press any key to quit");
                     Console.Read();
                     return;
@@ -76,16 +85,16 @@ namespace MailSim
                     return;
                 }
 
+                ExecuteSequence exeSeq = new ExecuteSequence(seq);
+
                 // initializes logging
                 Log.LogFileLocation(seq.LogFileLocation);
-
-                ExecuteSequence exeSeq = new ExecuteSequence(seq);
 
                 exeSeq.Execute();
             }
             catch (Exception ex)
             {
-                Log.Out(Log.Severity.Error, Process.GetCurrentProcess().ProcessName, "Error encountered\n" + ex.ToString());
+                Log.Out(Log.Severity.Error, Process.GetCurrentProcess().ProcessName, "Error encountered\n{0}", ex);
             }
         }
 

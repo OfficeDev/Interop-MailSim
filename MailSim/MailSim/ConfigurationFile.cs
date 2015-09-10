@@ -13,6 +13,7 @@ using System.Xml;
 using System.Xml.Serialization;
 using System.Xml.Schema;
 
+using MailSim.Common;
 
 namespace MailSim
 {
@@ -30,8 +31,42 @@ namespace MailSim
         /// <returns>Returns MailSimSequence if successful, otherwise returns null</returns>
         public static MailSimSequence LoadSequenceFile(string sequenceFile)
         {
-            XmlDocument outXML = null;
-            return LoadXml<MailSimSequence>(sequenceFile, SequenceSchema, out outXML);
+            MailSimSequence sequence = null;
+
+            if (!sequenceFile.EndsWith(".xml", StringComparison.InvariantCultureIgnoreCase) || !File.Exists(sequenceFile))
+            {
+                Log.Out(Log.Severity.Error, XMLProcessing, "Sequence file {0} does not exist", sequenceFile);
+                return null;
+            }
+
+            if (!File.Exists(SequenceSchema))
+            {
+                Log.Out(Log.Severity.Error, XMLProcessing, "Unable to locate schema file {0}", SequenceSchema);
+                return null;
+            }
+
+            try
+            {
+                if (ValidateXML(sequenceFile, SequenceSchema) == null)
+                {
+                    Log.Out(Log.Severity.Error, XMLProcessing, "Unable to process the sequence file {0}", sequenceFile);
+                    return null;
+                }
+
+                // Deserializes the sequence XML file
+                XmlSerializer seqSer = new XmlSerializer(typeof(MailSimSequence));
+                using (XmlReader seqReader = XmlReader.Create(sequenceFile))
+                {
+                    sequence = (MailSimSequence)seqSer.Deserialize(seqReader);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Out(Log.Severity.Error, XMLProcessing, "Run exception\n{0}", ex);
+                return null;
+            }
+
+            return sequence;
         }
 
 
@@ -43,49 +78,49 @@ namespace MailSim
         /// <returns>Returns MailSimOperations if successful, otherwise returns null </returns>
         public static MailSimOperations LoadOperationFile(string opFile, out XmlDocument opXML)
         {
-            return LoadXml<MailSimOperations>(opFile, OperationSchema, out opXML);
-        }
+            MailSimOperations operations = null;
+            opXML = null;
 
-        private static T LoadXml<T>(string xmlFile, string schemaFile, out XmlDocument outXML)
-        {
-            outXML = null;
-
-            if (!xmlFile.EndsWith(".xml", StringComparison.InvariantCultureIgnoreCase) || !File.Exists(xmlFile))
+            if (!opFile.EndsWith(".xml", StringComparison.InvariantCultureIgnoreCase) || !File.Exists(opFile))
             {
-                Log.Out(Log.Severity.Error, XMLProcessing, "Specified xml file {0} does not exist", xmlFile);
-                return default(T);
+                Log.Out(Log.Severity.Error, XMLProcessing, "Specified operation file {0} does not exist", opFile);
+                return null;
             }
 
-            if (!File.Exists(schemaFile))
+            if (!File.Exists(OperationSchema))
             {
-                Log.Out(Log.Severity.Error, XMLProcessing, "Unable to locate schema file {0}", schemaFile);
-                return default(T);
+                Log.Out(Log.Severity.Error, XMLProcessing, "Unable to locate schema file {0}", OperationSchema);
+                return null;
             }
-
             try
             {
-                outXML = ValidateXML(xmlFile, schemaFile);
+                opXML = ValidateXML(opFile, OperationSchema);
 
                 // Validates the operation file.
-                if (outXML == null)
+                if (opXML == null)
                 {
-                    Log.Out(Log.Severity.Error, XMLProcessing, "Unable to process file {0}", xmlFile);
-                    return default(T);
+                    Log.Out(Log.Severity.Error, XMLProcessing, "Unable to process the operation file {0}", opFile);
+                    return null;
                 }
 
-                var serializer = new XmlSerializer(typeof(T));
-                using (var reader = XmlReader.Create(xmlFile))
+                // Loads each referenced operations file from the sequence file.
+                XmlSerializer opSer = new XmlSerializer(typeof(MailSimOperations));
+                using (XmlReader opReader = XmlReader.Create(opFile))
                 {
-                    return (T)serializer.Deserialize(reader);
+                    operations = (MailSimOperations)opSer.Deserialize(opReader);
                 }
+
             }
             catch (Exception ex)
             {
-                Log.Out(Log.Severity.Error, XMLProcessing, "LoadXml exception\n" + ex.ToString());
-                return default(T);
+                Log.Out(Log.Severity.Error, XMLProcessing, "LoadOperationFile exception\n{0}", ex);
+                return null;
             }
+
+            return operations;
         }
 
+        
         /// <summary>
         /// This method validates the XML file with the schema
         /// </summary>
@@ -122,12 +157,13 @@ namespace MailSim
             catch (Exception ex)
             {
                 Log.Out(Log.Severity.Error, XMLProcessing,
-                    "{0} schema validation exception encountered\n" + ex.ToString(), xmlFile);
+                    "{0} schema validation exception encountered\n{1}", xmlFile, ex);
                 return null;
             }
 
             return testConfig;
         }
+
         
         /// <summary>
         /// Handler for XML schema validation
