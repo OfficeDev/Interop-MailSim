@@ -18,7 +18,8 @@ namespace MailSim.ProvidersREST
         private OutlookServicesClient _outlookClient;
         private readonly IUser _user;
 
-        public MailStoreProviderSDK()
+        public MailStoreProviderSDK(string userName, string password) :
+            base(userName, password)
         {
             _outlookClient = GetOutlookClient("Mail");
 

@@ -26,7 +26,7 @@ namespace MailSim.Common.Contracts
         /// <summary>
         /// Get collection of MailItems in current folder
         /// <param name="filter"> string to match in mail item subject or null to perform no matching</param>
-        /// <param name="count"> maximum number of items to return </param>
+        /// <param name="count"> maximum number of items to fetch from the folder </param>
         /// </summary>
         /// <returns>IEnumerable of IMailItem</returns>
         IEnumerable<IMailItem> GetMailItems(string filter, int count);

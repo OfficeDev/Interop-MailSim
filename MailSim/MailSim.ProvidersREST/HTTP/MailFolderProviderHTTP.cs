@@ -12,6 +12,7 @@ namespace MailSim.ProvidersREST
 {
     class MailFolderProviderHTTP : IMailFolder
     {
+        private const int PageSize = 100;   // the page to use for $top argument
         private readonly Folder _folder;
 //        private string _subscriptionId;
 
@@ -171,11 +172,17 @@ namespace MailSim.ProvidersREST
 
             if (string.IsNullOrEmpty(filter))
             {
-                uri = Uri + string.Format("/Messages?&$top={0}", count);
+                uri = Uri + string.Format("/Messages?&$top={0}", PageSize);
             }
             else
             {
-                uri = Uri + string.Format("/Messages?$search=\"{1}\"&$top={0}", count, filter);
+                // TODO: We'd really like to use server-side filtering,
+                // but it looks like search only works in terms of StartsWith method.
+#if true
+                uri = Uri + string.Format("/Messages?&$top={0}", PageSize);
+#else
+                uri = Uri + string.Format("/Messages?$search=\"{1}\"&$top={0}", PageSize, filter);
+#endif
             }
 
             return HttpUtil.EnumerateCollection<MailItemProviderHTTP.Message>(uri, count);

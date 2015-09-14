@@ -87,7 +87,7 @@ namespace MailSim.ProvidersREST
         {
             // TODO: there is no way right now to filter mails server-side
             var pages = _folderFetcher.Value.Messages
-                .Take(100)
+                .Take(100)      // set the page size
                 .ExecuteAsync()
                 .Result;
 
@@ -147,7 +147,11 @@ namespace MailSim.ProvidersREST
         {
             foreach (var item in pages.CurrentPage)
             {
-                if (filter(item) && count-- > 0)
+                if (--count < 0)
+                {
+                    yield break;
+                }
+                else if (filter(item))
                 {
                     yield return item;
                 }
@@ -159,7 +163,11 @@ namespace MailSim.ProvidersREST
 
                 foreach (var item in pages.CurrentPage)
                 {
-                    if (filter(item) && count-- > 0)
+                    if (--count < 0)
+                    {
+                        yield break;
+                    }
+                    else if (filter(item))
                     {
                         yield return item;
                     }

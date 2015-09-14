@@ -12,11 +12,15 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using MailSim.Common;
+using System.Linq;
 
 namespace MailSim
 {
     class MailSimMain
     {
+        private const string OptionsFile = "options.config";
+        private const string OptionsSchema = "options.xsd";
+
         /// <summary>
         /// Main program
         /// </summary>
@@ -24,46 +28,54 @@ namespace MailSim
         static void Main(string[] args)
         {
             AppDomain.CurrentDomain.ProcessExit += new EventHandler(OnProcessExit);
-            
-            if (args.Length > 0)
-            {
-                if (args[0] == "/t")
-                {
-                    MailSimTest testClass = new MailSimTest();
-                    
-                    try
-                    {
-                        testClass.Execute(args);
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Out(Log.Severity.Error, string.Empty, "Exception: {0}", ex);
-                    }
 
-                    Log.Out(Log.Severity.Info, "", "Press any key to quit");
-                    Console.Read();
+            var options = ConfigurationFile.LoadXml<MailSimOptions>(OptionsFile, OptionsSchema);
+
+            try
+            {
+                if (options != null && ProcessArgs(args, options))
+                {
+                    ProcessSequense(args, options);
                     return;
                 }
+            }
+            catch (Exception ex)
+            {
+                Log.Out(Log.Severity.Error, Process.GetCurrentProcess().ProcessName, "Error encountered\n{0}", ex);
+            }
+
+            Log.Out(Log.Severity.Info, "", "Press any key to quit");
+            Console.Read();
+        }
+
+        private static bool ProcessArgs(string[] args, MailSimOptions options)
+        {
+            if (args.Length > 0 && args[0] == "/t")
+            {
+                // Execute smoke test
+                var testClass = new MailSimTest(options, args.Length > 1 ? args[1] : null);
+                testClass.Execute();
+                return false;
             }
 
             if (args.Length != 1)
             {
-                Log.Out(Log.Severity.Error, "", "Invalid parameter!");
-                PrintUsage();
-                return;
+                Log.Out(Log.Severity.Error, "", "Invalid arguments");
             }
-
-            if (!File.Exists(args[0]))
+            else if (!File.Exists(args[0]))
             {
-                Log.Out(Log.Severity.Error, "", "Invalid parameter, file does not exist");
-                PrintUsage();
-                return;
+                Log.Out(Log.Severity.Error, "", "Invalid argument, file does not exist");
+            }
+            else
+            {
+                return true;
             }
 
-            ProcessArgs(args);
+            PrintUsage();
+            return false;
         }
 
-        static void OnProcessExit(object sender, EventArgs e)
+        private static void OnProcessExit(object sender, EventArgs e)
         {
             Log.CloseLogFileElement();
         }
@@ -72,30 +84,23 @@ namespace MailSim
         /// Starting main execution engine
         /// </summary>
         /// <param name="args"></param>
-        private static void ProcessArgs(string[] args)
+        private static void ProcessSequense(string[] args, MailSimOptions options)
         {
-            try
+            Log.Initialize(args[0]);
+            MailSimSequence seq = ConfigurationFile.LoadSequenceFile(args[0]);
+
+            if (seq == null)
             {
-                Log.Initialize(args[0]);
-                MailSimSequence seq = ConfigurationFile.LoadSequenceFile(args[0]);
-
-                if (seq == null)
-                {
-                    Log.Out(Log.Severity.Error, Process.GetCurrentProcess().ProcessName, "Unable to load sequence XML file {0}", args[0]);
-                    return;
-                }
-
-                ExecuteSequence exeSeq = new ExecuteSequence(seq);
-
-                // initializes logging
-                Log.LogFileLocation(seq.LogFileLocation);
-
-                exeSeq.Execute();
+                Log.Out(Log.Severity.Error, Process.GetCurrentProcess().ProcessName, "Unable to load sequence XML file {0}", args[0]);
+                return;
             }
-            catch (Exception ex)
-            {
-                Log.Out(Log.Severity.Error, Process.GetCurrentProcess().ProcessName, "Error encountered\n{0}", ex);
-            }
+
+            ExecuteSequence exeSeq = new ExecuteSequence(seq, options);
+
+            // initializes logging
+            Log.LogFileLocation(seq.LogFileLocation);
+
+            exeSeq.Execute();
         }
 
 

@@ -15,7 +15,7 @@ namespace MailSim.ProvidersREST
 
         internal static async Task<T> GetItemAsync<T>(string uri)
         {
-            return await DoHttp<T,T>(HttpMethod.Get, uri, default(T));
+            return await DoHttp<EmptyBody,T>(HttpMethod.Get, uri, null);
         }
 
         internal static async Task<T> GetItemsAsync<T>(string uri)
@@ -27,28 +27,13 @@ namespace MailSim.ProvidersREST
 
         internal static IEnumerable<T> EnumerateCollection<T>(string uri, int count)
         {
-#if false
-            IEnumerable<T> items = Enumerable.Empty<T>();
-
             while (count > 0 && uri != null)
-            {
-                var msgsColl = GetCollectionAsync<IEnumerable<T>>(uri).Result;
-
-                items = items.Union(msgsColl.value.Take(count));
-                count -= msgsColl.value.Count();
-
-                uri = msgsColl.NextLink;
-            }
-
-            return items;
-#else
-            while (uri != null)
             {
                 var msgsColl = GetCollectionAsync<IEnumerable<T>>(uri).Result;
 
                 foreach (var m in msgsColl.value)
                 {
-                    if (--count <= 0)
+                    if (--count < 0)
                     {
                         yield break;
                     }
@@ -57,12 +42,11 @@ namespace MailSim.ProvidersREST
 
                 uri = msgsColl.NextLink;
             }
-#endif
         }
 
         internal static async Task<ODataCollection<T>> GetCollectionAsync<T>(string uri)
         {
-            return await DoHttp<ODataCollection<T>, ODataCollection<T>>(HttpMethod.Get, uri, default(ODataCollection<T>));
+            return await DoHttp<EmptyBody, ODataCollection<T>>(HttpMethod.Get, uri, null);
         }
 
         internal static async Task<T> PostItemAsync<T>(string uri, T item=default(T))
@@ -98,7 +82,7 @@ namespace MailSim.ProvidersREST
             {
                 var request = new HttpRequestMessage(method, BuildUri(uri));
 
-                if (EqualityComparer<TBody>.Default.Equals(body, default(TBody)) == false)
+                if (body != null)
                 {
                     request.Content = new ObjectContent<TBody>(body, new JsonMediaTypeFormatter());
                 }
@@ -163,5 +147,7 @@ namespace MailSim.ProvidersREST
 
             public TCollection value { get; set; }
         }
+
+        private class EmptyBody { }
     }
 }

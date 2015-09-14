@@ -23,9 +23,9 @@ namespace MailSim.ProvidersREST
             {"olFolderSentMail", "Sent Items"},
         };
 
-        public MailStoreProviderBase()
+        public MailStoreProviderBase(string userName, string password)
         {
-            _adClient = AuthenticationHelper.GetGraphClientAsync().Result;
+            _adClient = AuthenticationHelper.GetGraphClientAsync(userName, password).Result;
         }
 
         protected IAddressBook GetGAL()

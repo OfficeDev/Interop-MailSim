@@ -1,20 +1,27 @@
-﻿using MailSim.Common.Contracts;
+﻿using MailSim.Common;
+using MailSim.Common.Contracts;
+using System;
 
 namespace MailSim
 {
-    // TODO: Define the provider selection via config file
+
     class ProviderFactory
     {
-        public static IMailStore CreateMailStore(string mailboxName, MailSimSequence seq = null)
+        public static IMailStore CreateMailStore(string mailboxName, MailSimOptions options)
         {
-            if (true)
+            switch (options.ProviderType)
             {
-                return new ProvidersOM.MailStoreProviderOM(mailboxName, seq == null ? false : seq.DisableOutlookPrompt);
-            }
-            else
-            {
-//                return new ProvidersREST.MailStoreProviderSDK();
-                return new ProvidersREST.MailStoreProviderHTTP();
+                case MailSimOptionsProviderType.OOM:
+                    return new ProvidersOM.MailStoreProviderOM(mailboxName, options.DisableOutlookPrompts);
+
+                case MailSimOptionsProviderType.HTTP:
+                    return new ProvidersREST.MailStoreProviderHTTP(options.UserName, options.Password);
+
+                case MailSimOptionsProviderType.SDK:
+                    return new ProvidersREST.MailStoreProviderSDK(options.UserName, options.Password);
+
+                default:
+                    throw new Exception(string.Format("Unknown provider type: {0}!", options.ProviderType));
             }
         }
     }

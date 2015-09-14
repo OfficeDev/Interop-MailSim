@@ -11,7 +11,8 @@ namespace MailSim.ProvidersREST
 {
     public class MailStoreProviderHTTP : MailStoreProviderBase, IMailStore
     {
-        public MailStoreProviderHTTP()
+        public MailStoreProviderHTTP(string userName, string password) :
+            base(userName, password)
         {
             var user = HttpUtil.GetItemAsync<User>(string.Empty).Result;
             DisplayName = user.Id;

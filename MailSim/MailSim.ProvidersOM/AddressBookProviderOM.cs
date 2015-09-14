@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using Outlook = Microsoft.Office.Interop.Outlook;
+using Microsoft.Office.Interop.Outlook;
 using MailSim.Common;
 using MailSim.Common.Contracts;
 
@@ -12,31 +12,30 @@ namespace MailSim.ProvidersOM
 {
     class AddressBookProviderOM : IAddressBook
     {
-       private readonly Outlook.AddressList _addressList;
+       private readonly AddressList _addressList;
 
         /// <summary>
         /// Constructor
         /// </summary>
         /// <param name="addressList"></param>
-        public AddressBookProviderOM(Outlook.AddressList addressList)
+        public AddressBookProviderOM(AddressList addressList)
         {
             _addressList = addressList;
         }
 
-        /// <summary>
-        /// Builds list of addresses for all users in the Address List that have display name match
-        /// </summary>
-        /// <param name="match"> string to match in user name or null to return all users in the GAL</param>
-        /// <returns>List of SMTP addresses of matching users in the address list. The list will be empty if no users exist or match.</returns>
         public IEnumerable<string> GetUsers(string match, int count)
         {
             match = match ?? string.Empty;
 
-            foreach (Outlook.AddressEntry addrEntry in _addressList.AddressEntries)
+            foreach (AddressEntry addrEntry in _addressList.AddressEntries)
             {
-                if (addrEntry.AddressEntryUserType == Outlook.OlAddressEntryUserType.olExchangeUserAddressEntry)
+                if (addrEntry.AddressEntryUserType == OlAddressEntryUserType.olExchangeUserAddressEntry)
                 {
-                    if (addrEntry.Name.ContainsCaseInsensitive(match) && count-- > 0)
+                    if (--count < 0)
+                    {
+                        yield break;
+                    }
+                    else if (addrEntry.Name.ContainsCaseInsensitive(match))
                     {
                         yield return addrEntry.GetExchangeUser().PrimarySmtpAddress;
                     }
@@ -44,33 +43,31 @@ namespace MailSim.ProvidersOM
             }
         }
 
-        /// <summary>
-        /// Builds list of addresses for all members of Exchange Distribution list in the Address List
-        /// </summary>
-        /// <param name="dLName">Exchane Distribution List Name</param>
-        /// <returns>List of SMTP addresses of DL members or null if DL is not found. Nesting DLs are not expanded. </returns>
         public IEnumerable<string> GetDLMembers(string dLName, int count)
         {
-            foreach (Outlook.AddressEntry addrEntry in _addressList.AddressEntries)
+            if (string.IsNullOrEmpty(dLName))
             {
-                if ((addrEntry.AddressEntryUserType == Outlook.OlAddressEntryUserType.olExchangeDistributionListAddressEntry)
-                    && (addrEntry.Name.Equals(dLName, StringComparison.OrdinalIgnoreCase)))
+                yield break;
+            }
+
+            foreach (AddressEntry addrEntry in _addressList.AddressEntries)
+            {
+                if (addrEntry.AddressEntryUserType == OlAddressEntryUserType.olExchangeDistributionListAddressEntry
+                    && addrEntry.Name.EqualsCaseInsensitive(dLName))
                 {
-                    foreach(Outlook.AddressEntry member in addrEntry.GetExchangeDistributionList().GetExchangeDistributionListMembers())
+                    foreach (AddressEntry member in addrEntry.GetExchangeDistributionList().GetExchangeDistributionListMembers())
                     {
-                        if (member.AddressEntryUserType == Outlook.OlAddressEntryUserType.olExchangeUserAddressEntry)
+                        if (--count < 0)
                         {
-                            if (count-- > 0)
-                            {
-                                yield return member.GetExchangeUser().PrimarySmtpAddress;
-                            }
+                            yield break;
                         }
-                        else if (addrEntry.AddressEntryUserType == Outlook.OlAddressEntryUserType.olExchangeDistributionListAddressEntry)
+                        if (member.AddressEntryUserType == OlAddressEntryUserType.olExchangeUserAddressEntry)
                         {
-                            if (count-- > 0)
-                            {
-                                yield return member.GetExchangeDistributionList().PrimarySmtpAddress;
-                            }
+                            yield return member.GetExchangeUser().PrimarySmtpAddress;
+                        }
+                        else if (addrEntry.AddressEntryUserType == OlAddressEntryUserType.olExchangeDistributionListAddressEntry)
+                        {
+                            yield return member.GetExchangeDistributionList().PrimarySmtpAddress;
                         }
                     }
                }

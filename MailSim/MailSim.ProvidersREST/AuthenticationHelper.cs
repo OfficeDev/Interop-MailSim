@@ -17,8 +17,9 @@ namespace MailSim.ProvidersREST
         private static readonly Uri ReturnUri = new Uri(Resources.ReturnUri);
 
         // Properties used for communicating with your Windows Azure AD tenant.
-        private static readonly string CommonAuthority = "https://login.microsoftonline.com/Common";
+        private const string CommonAuthority = "https://login.microsoftonline.com/Common";
         private const string AadServiceResourceId = "https://graph.windows.net/";
+        private const string OfficeResourceId = "https://outlook.office365.com/";
 
         private const string ModuleName = "AuthenticationHelper";
 
@@ -35,17 +36,23 @@ namespace MailSim.ProvidersREST
         // Property for storing the logged-in user so that we can display user properties later.
         internal static string LoggedInUser { get; set; }
 
+        private static string UserName { get; set; }
+        private static string Password { get; set; }
+
         /// <summary>
         /// Checks that a Graph client is available.
         /// </summary>
         /// <returns>The Graph client.</returns>
-        public static async Task<ActiveDirectoryClient> GetGraphClientAsync()
+        internal static async Task<ActiveDirectoryClient> GetGraphClientAsync(string userName, string password)
         {
             //Check to see if this client has already been created. If so, return it. Otherwise, create a new one.
             if (_graphClient != null)
             {
                 return _graphClient;
             }
+
+            UserName = userName;
+            Password = password;
 
             // Active Directory service endpoints
             Uri aadServiceEndpointUri = new Uri(AadServiceResourceId);
@@ -86,8 +93,7 @@ namespace MailSim.ProvidersREST
 
         internal static string GetOutlookToken()
         {
-            string resourceId = "https://outlook.office365.com/";
-            return GetTokenHelper(_authenticationContext, resourceId);
+            return GetTokenHelper(_authenticationContext, OfficeResourceId);
         }
 
         internal static async Task<string> GetTokenAsync(string resourceId)
@@ -109,7 +115,16 @@ namespace MailSim.ProvidersREST
             
             try
             {
-                AuthenticationResult result = context.AcquireToken(resourceId, ClientID, ReturnUri);
+                AuthenticationResult result;
+
+                if (string.IsNullOrEmpty(UserName) || string.IsNullOrEmpty(Password))
+                {
+                    result = context.AcquireToken(resourceId, ClientID, ReturnUri);
+                }
+                else
+                {
+                    result = context.AcquireToken(resourceId, ClientID, new UserCredential(UserName, Password));
+                }
 
                 accessToken = result.AccessToken;
 

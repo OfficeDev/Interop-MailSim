@@ -12,5 +12,10 @@ namespace MailSim.Common
         {
             return input.IndexOf(match, StringComparison.OrdinalIgnoreCase) >= 0;
         }
+
+        public static bool EqualsCaseInsensitive(this string input, string match)
+        {
+            return input.Equals(match, StringComparison.OrdinalIgnoreCase);
+        }
     }
 }

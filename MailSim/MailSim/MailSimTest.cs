@@ -27,12 +27,20 @@ namespace MailSim
 {
     class MailSimTest
     {
+        private readonly MailSimOptions _options;
+        private readonly string _mailboxName;
+
+        internal MailSimTest(MailSimOptions options, string mailboxName)
+        {
+            _options = options;
+            _mailboxName = mailboxName;
+        }
+
         /// <summary>
         /// Test module, focusing on Outlook (OOM) wrapper classes (Mail*)
         /// Also serves as an example for Mail* classes usage 
         /// </summary>
-        /// <param name="args">Command line argument. It is expected that the first argument is always "/t"</param>
-        public void Execute(string[] args)
+        public void Execute()
         {
             IMailStore mailStore = null;
 
@@ -40,12 +48,7 @@ namespace MailSim
             {
                 // We will use mailbox with display name specified in arg[1];
                 // otherwise, we will get the default store
-                mailStore = ProviderFactory.CreateMailStore(args.Length > 1 ? args[1] : null);
-            }
-            catch (ArgumentException ex)
-            {
-                Console.WriteLine(ex.Message);
-                return;
+                mailStore = ProviderFactory.CreateMailStore(_mailboxName, _options);
             }
             catch (Exception ex)
             {
@@ -93,7 +96,7 @@ namespace MailSim
                 testFolder = inbox.AddSubFolder(testFolderName);
             }
 
-            var items = inbox.GetMailItems("azure", 50);
+            var items = inbox.GetMailItems("", 500);
 
             int index = 0;
             foreach (var i in items)

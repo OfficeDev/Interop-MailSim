@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using MailSim.Common.Contracts;
 using Microsoft.Azure.ActiveDirectory.GraphClient;
 using Microsoft.Azure.ActiveDirectory.GraphClient.Extensions;
+using MailSim.Common;
 
 namespace MailSim.ProvidersREST
 {
@@ -26,35 +27,31 @@ namespace MailSim.ProvidersREST
 
         public IEnumerable<string> GetDLMembers(string dLName, int count)
         {
-            IReadOnlyList<IGroup> groups;
-
             if (string.IsNullOrEmpty(dLName))
-            {
-                groups = _adClient.Groups
-                    .ExecuteAsync()
-                    .Result
-                    .CurrentPage;   // assume we are going to use the first matching group
-            }
-            else
-            {
-                groups = _adClient.Groups
-                    .Where(g => g.Mail.StartsWith(dLName))
-                    .ExecuteAsync()
-                    .Result
-                    .CurrentPage;   // assume we are going to use the first matching group
-            }
-
-            if (groups.Any() == false)
             {
                 return Enumerable.Empty<string>();
             }
 
-            var group = groups.First() as Group;
-            IGroupFetcher groupFetcher = group;
+            var pagedGroups = _adClient.Groups
+                    .Where(g => g.DisplayName.StartsWith(dLName))
+                    .ExecuteAsync()
+                    .Result;
 
-            var pages = groupFetcher.Members.ExecuteAsync().Result;
+            // Look for the group with exact match
+            var group = GetFilteredItems(pagedGroups, int.MaxValue,
+                               (g) => g.DisplayName.EqualsCaseInsensitive(dLName))
+                               .FirstOrDefault();
 
-            var members = GetFilteredItems(pages, count, (member) => member is User);
+            if (group == null)
+            {
+                return Enumerable.Empty<string>();
+            }
+
+            var groupFetcher = group as IGroupFetcher;
+
+            var pagedMembers = groupFetcher.Members.ExecuteAsync().Result;
+
+            var members = GetFilteredItems(pagedMembers, count, (member) => member is User);
 
             return members.Select(m => (m as User).UserPrincipalName);
         }
@@ -71,6 +68,7 @@ namespace MailSim.ProvidersREST
             }
             else
             {
+                // Apply server-side filtering
                 pagedUsers = _adClient.Users
                     .Where(x =>
                         x.UserPrincipalName.StartsWith(match) ||
@@ -91,7 +89,11 @@ namespace MailSim.ProvidersREST
         {
             foreach (var item in pages.CurrentPage)
             {
-                if (filter(item) && count-- > 0)
+                if (--count < 0)
+                {
+                    yield break;
+                }
+                else if (filter(item))
                 {
                     yield return item;
                 }
@@ -103,7 +105,11 @@ namespace MailSim.ProvidersREST
 
                 foreach (var item in pages.CurrentPage)
                 {
-                    if (filter(item) && count-- > 0)
+                    if (--count < 0)
+                    {
+                        yield break;
+                    }
+                    else if (filter(item))
                     {
                         yield return item;
                     }

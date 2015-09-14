@@ -10,7 +10,6 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Threading;
-using System.Xml;
 using System.Linq;
 
 using MailSim.Common;
@@ -22,12 +21,9 @@ namespace MailSim
     {
         private readonly MailSimSequence sequence;
         private MailSimOperations operations;
-        private XmlDocument operationXML;
         private readonly IMailStore olMailStore;
         private readonly Random randomNum = new Random();
 
-        private const string Recipients = "Recipients";
-        private const string RandomRecipients = "RandomRecipients";
         private const string DefaultSubject = "Default Subject";
         private const string DefaultBody = "Default Body";
         private const int MaxNumberOfRandomFolder = 100;
@@ -43,7 +39,7 @@ namespace MailSim
         /// Constructor
         /// </summary>
         /// <param name="seq">Sequence file content </param>
-        public ExecuteSequence(MailSimSequence seq)
+        internal ExecuteSequence(MailSimSequence seq, MailSimOptions options)
         {
             typeFuncs[typeof(MailSimOperationsMailSend)] = (oper) => MailSend((MailSimOperationsMailSend)oper);
             typeFuncs[typeof(MailSimOperationsMailDelete)] = (oper) => MailDelete((MailSimOperationsMailDelete)oper);
@@ -60,7 +56,7 @@ namespace MailSim
             {
                 try
                 {
-                    olMailStore = ProviderFactory.CreateMailStore(null, sequence);
+                    olMailStore = ProviderFactory.CreateMailStore(null, options);
                 }
                 catch (Exception)
                 {
@@ -73,7 +69,7 @@ namespace MailSim
         /// <summary>
         /// This method unregisters event 
         /// </summary>
-        public void CleanupAfterIteration()
+        private void CleanupAfterIteration()
         {
             // Unregisters all registered folder events 
             foreach (IMailFolder folder in FolderEventList)
@@ -88,7 +84,7 @@ namespace MailSim
         /// <summary>
         /// This method process the sequence file
         /// </summary>
-        public void Execute()
+        internal void Execute()
         {
             if (sequence == null)
             {
@@ -108,7 +104,7 @@ namespace MailSim
                 int iterations = GetIterationCount(group.Iterations);
 
                 // Run the operations file
-                operations = ConfigurationFile.LoadOperationFile(group.OperationFile, out operationXML);
+                operations = ConfigurationFile.LoadOperationFile(group.OperationFile);
 
                 if (operations == null)
                 {
@@ -140,7 +136,7 @@ namespace MailSim
         /// </summary>
         /// <param name="task">task to run</param>
         /// <returns>Returns true if successful, otherwise returns false </returns>
-        public void ProcessTask(MailSimSequenceOperationGroupTask task)
+        private void ProcessTask(MailSimSequenceOperationGroupTask task)
         {
             int iterations = GetIterationCount(task.Iterations);
 
@@ -148,13 +144,20 @@ namespace MailSim
             {
                 Log.Out(Log.Severity.Info, task.Name, "Running task {0}", count);
 
-                if (ExecuteTask(task.Name))
+                try
                 {
-                    Log.Out(Log.Severity.Info, task.Name, "Completed task run {0}", count);
+                    if (ExecuteTask(task.Name))
+                    {
+                        Log.Out(Log.Severity.Info, task.Name, "Completed task run {0}", count);
+                    }
+                    else
+                    {
+                        Log.Out(Log.Severity.Error, task.Name, "Failed to run task");
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    Log.Out(Log.Severity.Error, task.Name, "Failed to run task");
+                    Log.Out(Log.Severity.Error, task.Name, "Exception encountered\n{0}", ex);
                 }
 
                 SleepOrStop(task.Name, task.Sleep);
@@ -166,14 +169,14 @@ namespace MailSim
         /// </summary>
         /// <param name="taskName">name of the task</param>
         /// <returns>Returns true if successful, otherwise returns false </returns>
-        public bool ExecuteTask(string taskName)
+        private bool ExecuteTask(string taskName)
         {
             object operation = null;
 
             try
             {
                 operation = operations.Items
-                    .SingleOrDefault(x => string.Equals(GetOperationName(x), taskName, StringComparison.OrdinalIgnoreCase));
+                    .SingleOrDefault(x => taskName.EqualsCaseInsensitive(x.OperationName));
             }
             catch (InvalidOperationException)
             {
@@ -216,32 +219,24 @@ namespace MailSim
 
             for (int count = 1; count <= iterations; count++)
             {
-                try
+                // generates a new email
+                IMailItem mail = olMailStore.NewMailItem();
+
+                mail.Subject = DateTime.Now.ToString() + " - ";
+                mail.Subject += (string.IsNullOrEmpty(operation.Subject)) ? DefaultSubject : operation.Subject;
+                Log.Out(Log.Severity.Info, operation.OperationName, "Subject: {0}", mail.Subject);
+
+                mail.Body = BuildBody(operation.Body);
+                Log.Out(Log.Severity.Info, operation.OperationName, "Body: {0}", mail.Body);
+
+                if (!AddRecipients(mail, operation))
                 {
-                    // generates a new email
-                    IMailItem mail = olMailStore.NewMailItem();
-
-                    mail.Subject = DateTime.Now.ToString() + " - ";
-                    mail.Subject += (string.IsNullOrEmpty(operation.Subject)) ? DefaultSubject : operation.Subject;
-                    Log.Out(Log.Severity.Info, operation.OperationName, "Subject: {0}", mail.Subject);
-
-                    mail.Body = BuildBody(operation.Body);
-                    Log.Out(Log.Severity.Info, operation.OperationName, "Body: {0}", mail.Body);
-
-                    if (!AddRecipients(mail, operation))
-                    {
-                        return false;
-                    }
-
-                    AddAttachments(mail, operation);
-
-                    mail.Send();
-                }
-                catch (Exception ex)
-                {
-                    Log.Out(Log.Severity.Error, operation.OperationName, "Exception encountered\n{0}", ex);
                     return false;
                 }
+
+                AddAttachments(mail, operation);
+
+                mail.Send();
 
                 SleepOrStop(operation.OperationName, operation.Sleep);
             }
@@ -374,40 +369,32 @@ namespace MailSim
         {
             int iterations = GetIterationCount(operation.Count);
 
-            try
-            {
                 // gets the Outlook folder
-                IMailFolder folder = olMailStore.GetDefaultFolder(operation.FolderPath);
-                if (folder == null)
-                {
-                    Log.Out(Log.Severity.Error, operation.OperationName, "Unable to retrieve folder {0}",
-                        operation.FolderPath);
-                    return false;
-                }
-
-                // randomly generate the number of folders to create 
-                if (iterations == 0)
-                {
-                    iterations = randomNum.Next(1, MaxNumberOfRandomFolder + 1);
-                    Log.Out(Log.Severity.Info, operation.OperationName, "Randomly creating {0} folders", iterations);
-                }
-
-                for (int count = 1; count <= iterations; count++)
-                {
-                    Log.Out(Log.Severity.Info, operation.OperationName, "Starting iteration {0}", count);
-                    string newFolderName = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss.fff") + " - " + operation.FolderName;
-                    Log.Out(Log.Severity.Info, operation.OperationName, "Creating folder: {0}", newFolderName);
-                    folder.AddSubFolder(newFolderName);
-
-                    SleepOrStop(operation.OperationName, operation.Sleep);
-
-                    Log.Out(Log.Severity.Info, operation.OperationName, "Finished iteration {0}", count);
-                }
-            }
-            catch (Exception ex)
+            IMailFolder folder = olMailStore.GetDefaultFolder(operation.FolderPath);
+            if (folder == null)
             {
-                Log.Out(Log.Severity.Error, operation.OperationName, "Exception encountered\n" + ex);
+                Log.Out(Log.Severity.Error, operation.OperationName, "Unable to retrieve folder {0}",
+                    operation.FolderPath);
                 return false;
+            }
+
+            // randomly generate the number of folders to create 
+            if (iterations == 0)
+            {
+                iterations = randomNum.Next(1, MaxNumberOfRandomFolder + 1);
+                Log.Out(Log.Severity.Info, operation.OperationName, "Randomly creating {0} folders", iterations);
+            }
+
+            for (int count = 1; count <= iterations; count++)
+            {
+                Log.Out(Log.Severity.Info, operation.OperationName, "Starting iteration {0}", count);
+                string newFolderName = DateTime.Now.ToString("MM/dd/yyyy HH:mm:ss.fff") + " - " + operation.FolderName;
+                Log.Out(Log.Severity.Info, operation.OperationName, "Creating folder: {0}", newFolderName);
+                folder.AddSubFolder(newFolderName);
+
+                SleepOrStop(operation.OperationName, operation.Sleep);
+
+                Log.Out(Log.Severity.Info, operation.OperationName, "Finished iteration {0}", count);
             }
 
             return true;
@@ -424,58 +411,50 @@ namespace MailSim
             int iterations = GetIterationCount(operation.Count);
             bool random = false;
 
-            try
+            // gets the Outlook folder
+            IMailFolder folder = olMailStore.GetDefaultFolder(operation.FolderPath);
+            if (folder == null)
             {
-                // gets the Outlook folder
-                IMailFolder folder = olMailStore.GetDefaultFolder(operation.FolderPath);
-                if (folder == null)
-                {
-                    Log.Out(Log.Severity.Error, operation.OperationName, "Unable to retrieve folder {0}",
-                        operation.FolderPath);
-                    return false;
-                }
-
-                var subFolders = GetMatchingSubFolders(operation.OperationName, folder, operation.FolderName).ToList();
-                if (subFolders.Count == 0)
-                {
-                    Log.Out(Log.Severity.Error, operation.OperationName, "There is no matching folder to delete in folder {0}",
-                        folder.Name);
-                    return false;
-                }
-
-                // randomly generate the number of folder to delete if Count is not specified
-                if (iterations == 0)
-                {
-                    random = true;
-                    iterations = randomNum.Next(1, subFolders.Count + 1);
-                    Log.Out(Log.Severity.Info, operation.OperationName, "Randomly deleting {0} folders", iterations);
-                }
-                else if (iterations > subFolders.Count)
-                {
-                    Log.Out(Log.Severity.Warning, operation.OperationName, "Only {0} folders available, adjusting delete from {1} folders to {0}",
-                        subFolders.Count, iterations);
-                    iterations = subFolders.Count;
-                }
-
-                int indexToDelete;
-                for (int count = 1; count <= iterations; count++)
-                {
-                    Log.Out(Log.Severity.Info, operation.OperationName, "Starting iteration {0}", count);
-
-                    indexToDelete = random ? randomNum.Next(0, subFolders.Count) : subFolders.Count - 1;
-
-                    // deletes the folder and remove it from the saved list
-                    Log.Out(Log.Severity.Info, operation.OperationName, "Deleting folder: {0}", subFolders[indexToDelete].Name);
-                    subFolders[indexToDelete].Delete();
-                    subFolders.RemoveAt(indexToDelete);
-
-                    SleepOrStop(operation.OperationName, operation.Sleep);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Out(Log.Severity.Error, operation.OperationName, "Exception encountered\n" + ex);
+                Log.Out(Log.Severity.Error, operation.OperationName, "Unable to retrieve folder {0}",
+                    operation.FolderPath);
                 return false;
+            }
+
+            var subFolders = GetMatchingSubFolders(operation.OperationName, folder, operation.FolderName).ToList();
+            if (subFolders.Count == 0)
+            {
+                Log.Out(Log.Severity.Error, operation.OperationName, "There is no matching folder to delete in folder {0}",
+                    folder.Name);
+                return false;
+            }
+
+            // randomly generate the number of folder to delete if Count is not specified
+            if (iterations == 0)
+            {
+                random = true;
+                iterations = randomNum.Next(1, subFolders.Count + 1);
+                Log.Out(Log.Severity.Info, operation.OperationName, "Randomly deleting {0} folders", iterations);
+            }
+            else if (iterations > subFolders.Count)
+            {
+                Log.Out(Log.Severity.Warning, operation.OperationName, "Only {0} folders available, adjusting delete from {1} folders to {0}",
+                    subFolders.Count, iterations);
+                iterations = subFolders.Count;
+            }
+
+            int indexToDelete;
+            for (int count = 1; count <= iterations; count++)
+            {
+                Log.Out(Log.Severity.Info, operation.OperationName, "Starting iteration {0}", count);
+
+                indexToDelete = random ? randomNum.Next(0, subFolders.Count) : subFolders.Count - 1;
+
+                // deletes the folder and remove it from the saved list
+                Log.Out(Log.Severity.Info, operation.OperationName, "Deleting folder: {0}", subFolders[indexToDelete].Name);
+                subFolders[indexToDelete].Delete();
+                subFolders.RemoveAt(indexToDelete);
+
+                SleepOrStop(operation.OperationName, operation.Sleep);
             }
 
             return true;
@@ -490,41 +469,33 @@ namespace MailSim
         /// <returns></returns>
         private bool EventMonitor(MailSimOperationsEventMonitor operation)
         {
-            try
+            // gets the default Outlook folder
+            IMailFolder folder = olMailStore.GetDefaultFolder(operation.Folder);
+            if (folder == null)
             {
-                // gets the default Outlook folder
-                IMailFolder folder = olMailStore.GetDefaultFolder(operation.Folder);
-                if (folder == null)
-                {
-                    Log.Out(Log.Severity.Error, operation.OperationName, "Unable to retrieve folder {0}",
-                     operation.Folder);
-                    return false;
-                }
-
-                // makes sure we are not already registered for the folder
-                if (FolderEventList.Contains(folder))
-                {
-                    Log.Out(Log.Severity.Warning, operation.OperationName, "Event already registered for folder {0}", operation.Folder);
-                    return true;
-                }
-                // registers the event and remember the folder
-                else
-                {
-                    // registers folder event
-                    if (RegisterFolderEvent(operation.OperationName, folder, true) != true)
-                    {
-                        Log.Out(Log.Severity.Error, operation.OperationName, "Unable to register event");
-                        return false;
-                    }
-                }
-
-                SleepOrStop(operation.OperationName, operation.Sleep);
-            }
-            catch (Exception ex)
-            {
-                Log.Out(Log.Severity.Error, operation.OperationName, "Exception encountered\n" + ex);
+                Log.Out(Log.Severity.Error, operation.OperationName, "Unable to retrieve folder {0}",
+                    operation.Folder);
                 return false;
             }
+
+            // makes sure we are not already registered for the folder
+            if (FolderEventList.Contains(folder))
+            {
+                Log.Out(Log.Severity.Warning, operation.OperationName, "Event already registered for folder {0}", operation.Folder);
+                return true;
+            }
+            // registers the event and remember the folder
+            else
+            {
+                // registers folder event
+                if (RegisterFolderEvent(operation.OperationName, folder, true) != true)
+                {
+                    Log.Out(Log.Severity.Error, operation.OperationName, "Unable to register event");
+                    return false;
+                }
+            }
+
+            SleepOrStop(operation.OperationName, operation.Sleep);
 
             return true;
         }
@@ -538,25 +509,18 @@ namespace MailSim
         /// <param name="register">True to register folder event monitoring, False to unregister folder event monitoring</param>
         private bool RegisterFolderEvent(string operation, IMailFolder folder, bool register)
         {
-            try
+            if (register)
             {
-                if (register)
-                {
-                    folder.RegisterItemAddEventHandler(FolderMonitorEvent);
-                    FolderEventList.Add(folder);
-                    Log.Out(Log.Severity.Info, operation, "Registered event to " + folder.FolderPath);
-                }
-                else
-                {
-                    folder.UnRegisterItemAddEventHandler();
-                    Log.Out(Log.Severity.Info, operation, "Unregistered event to " + folder.FolderPath);
-                }
+                folder.RegisterItemAddEventHandler(FolderMonitorEvent);
+                FolderEventList.Add(folder);
+                Log.Out(Log.Severity.Info, operation, "Registered event to " + folder.FolderPath);
             }
-            catch (Exception ex)
+            else
             {
-                Log.Out(Log.Severity.Error, operation, "RegisterFolderEvent: Exception encountered\n{0}", ex);
-                return false;
+                folder.UnRegisterItemAddEventHandler();
+                Log.Out(Log.Severity.Info, operation, "Unregistered event to " + folder.FolderPath);
             }
+
             return true;
         }
 
@@ -565,7 +529,7 @@ namespace MailSim
         /// This method gets called when an event is triggered by the monitored folder.
         /// </summary>
         /// <param name="Item">Item corresponding to the event</param>
-        public static void FolderMonitorEvent(object Item)
+        private static void FolderMonitorEvent(object Item)
         {
             if (Item == null)
             {
@@ -792,7 +756,7 @@ namespace MailSim
 
             folderName = folderName ?? string.Empty;
 
-            return subFolders.Where(x => x.Name.Contains(folderName));
+            return subFolders.Where(x => x.Name.ContainsCaseInsensitive(folderName));
         }
 
         private bool AddRecipients(IMailItem mail, dynamic operation)
@@ -836,11 +800,6 @@ namespace MailSim
         private static int GetIterationCount(string countString)
         {
             return string.IsNullOrEmpty(countString) ? 1 : Convert.ToInt32(countString);
-        }
-
-        private string GetOperationName(dynamic operation)
-        {
-            return operation.OperationName;
         }
 
         private static void SleepOrStop(string name, string sleepSeconds)
@@ -921,16 +880,8 @@ namespace MailSim
                 {
                     Log.Out(Log.Severity.Info, Op.OperationName, "Starting iteration {0}", count);
 
-                    try
+                    if (!func(GetNextIndex(), Mails))
                     {
-                        if (!func(GetNextIndex(), Mails))
-                        {
-                            return false;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Out(Log.Severity.Error, Op.OperationName, "Exception encountered\n{0}", ex);
                         return false;
                     }
 
