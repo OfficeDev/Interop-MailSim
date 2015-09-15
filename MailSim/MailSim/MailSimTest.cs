@@ -21,18 +21,26 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-using MailSim.Contracts;
+using MailSim.Common.Contracts;
 
 namespace MailSim
 {
     class MailSimTest
     {
+        private readonly MailSimOptions _options;
+        private readonly string _mailboxName;
+
+        internal MailSimTest(MailSimOptions options, string mailboxName)
+        {
+            _options = options;
+            _mailboxName = mailboxName;
+        }
+
         /// <summary>
         /// Test module, focusing on Outlook (OOM) wrapper classes (Mail*)
         /// Also serves as an example for Mail* classes usage 
         /// </summary>
-        /// <param name="args">Command line argument. It is expected that the first argument is always "/t"</param>
-        public void Execute(string[] args)
+        public void Execute()
         {
             IMailStore mailStore = null;
 
@@ -40,12 +48,7 @@ namespace MailSim
             {
                 // We will use mailbox with display name specified in arg[1];
                 // otherwise, we will get the default store
-                mailStore = ProviderFactory.CreateMailStore(args.Length > 1 ? args[1] : null);
-            }
-            catch (ArgumentException ex)
-            {
-                Console.WriteLine(ex.Message);
-                return;
+                mailStore = ProviderFactory.CreateMailStore(_mailboxName, _options);
             }
             catch (Exception ex)
             {
@@ -58,6 +61,8 @@ namespace MailSim
             // Display all top folders in the mailbox
             IMailFolder rootFolder = mailStore.RootFolder;
 
+            string rootName = rootFolder.Name;
+            int foldersCount = rootFolder.SubFoldersCount;
             var rootFolders = rootFolder.SubFolders;
 
             foreach (var mailFolder in rootFolders)
@@ -91,6 +96,14 @@ namespace MailSim
                 testFolder = inbox.AddSubFolder(testFolderName);
             }
 
+            var items = inbox.GetMailItems("", 500);
+
+            int index = 0;
+            foreach (var i in items)
+            {
+                Console.WriteLine("{0}:{1}", index++, i.Subject);
+            }
+
             // Adding folder under Test Folder
             string folderName = "Test Subfolder " + (testFolder.SubFoldersCount + 1).ToString() + " - " + DateTime.Now.TimeOfDay.ToString();
             testFolder.AddSubFolder(folderName);
@@ -117,31 +130,32 @@ namespace MailSim
             
             // Sending new email with message attachment to matching users
             Console.WriteLine("Sending new email to matching GAL users");
+
+            int mailItemsCount = inbox.MailItemsCount;
             IMailItem newMail = mailStore.NewMailItem();
-            newMail.Subject = "Test Mail from MailSim to GAL users " + (inbox.MailItemsCount + 1).ToString() + " - " + DateTime.Now.TimeOfDay.ToString();
+            newMail.Subject = "Test Mail from MailSim to GAL users " + (mailItemsCount + 1).ToString() + " - " + DateTime.Now.TimeOfDay.ToString();
             newMail.Body = "Test from MailSim to matching users";
 
-            if (inbox.MailItemsCount > 0)
+            if (mailItemsCount > 0)
             {
                 var message = inbox.MailItems.First();
                 newMail.AddAttachment(message);
+ //               newMail.AddAttachment(@"C:\SW\MailSimRun\Attachments\TestAttachment.txt");
             }
+
             newMail.AddRecipient(mailboxName);
 
             var gal = mailStore.GetGlobalAddressList();
-            if (gal != null)
+
+            foreach (string userAddress in gal.GetUsers("Mailsim", 100))
             {
-                var users = gal.GetUsers("Mailsim");
-                foreach (string userAddress in users)
-                {
-                    newMail.AddRecipient(userAddress);
-                }
+                newMail.AddRecipient(userAddress);
             }
 
             if (newMail.ValidateRecipients())
             {
                 newMail.Send();
-                Console.WriteLine("Mail to specified users  sent!");
+                Console.WriteLine("Mail to specified users sent!");
             }
             else
             {
@@ -155,20 +169,17 @@ namespace MailSim
             newMail.Body = "Test from MailSim to DL members";
             newMail.AddRecipient(mailboxName);
 
-            if (gal != null)
-            {
-                var members = gal.GetDLMembers("Mailsim Users");
+            var members = gal.GetDLMembers("Mailsim Users", 200);
 
-                if (members.Any() == false)
+            if (members.Any() == false)
+            {
+                Console.WriteLine("ERROR: Distribution list not found or empty");
+            }
+            else
+            {
+                foreach (string userAddress in members)
                 {
-                    Console.WriteLine("ERROR: Distribution list not found or empty");
-                }
-                else
-                {
-                    foreach (string userAddress in members)
-                    {
-                        newMail.AddRecipient(userAddress);
-                    }
+                    newMail.AddRecipient(userAddress);
                 }
             }
 
@@ -182,7 +193,6 @@ namespace MailSim
                 Console.WriteLine("Incorrect recipient(s), mail not sent");
             }
 
-
             var inboxMailItems = inbox.MailItems;
             // Reply All
             if (inbox.MailItemsCount >= 1)
@@ -191,11 +201,13 @@ namespace MailSim
                 replyMail.Body = "Reply All by MailSim" + replyMail.Body;
                 Console.WriteLine("Message Body:");
                 Console.WriteLine(replyMail.Body);
+
                 replyMail.Send();
                 Console.WriteLine("Reply All mail sent!");
             }
 
             // Forward
+            inboxMailItems = inbox.MailItems;
             if (inbox.MailItemsCount >= 2)
             {
                 var forwardMail = inboxMailItems.Skip(1).First().Forward();

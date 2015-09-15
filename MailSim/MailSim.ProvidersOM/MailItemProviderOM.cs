@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Outlook = Microsoft.Office.Interop.Outlook;
-using MailSim.Contracts;
+using MailSim.Common.Contracts;
 
 namespace MailSim.ProvidersOM
 {

@@ -16,10 +16,12 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 
 
-namespace MailSim
+namespace MailSim.Common
 {
-    static class Log
+    public static class Log
     {
+        public static string eventString = "Event";
+
         private static string logFileName = null;
         private static string seqFileName;
         private static StreamWriter logWriter;
@@ -88,7 +90,6 @@ namespace MailSim
             {
                 logWriter.WriteLine("</" + Process.GetCurrentProcess().ProcessName + ">");
                 logWriter.Close();
-                logWriter = null;
             }
         }
 
@@ -112,7 +113,7 @@ namespace MailSim
                     Console.ForegroundColor = ConsoleColor.Yellow;
                     break;
                 default:
-                    if(name == ExecuteSequence.eventString)
+                    if(name == Log.eventString)
                     {
                         Console.ForegroundColor = ConsoleColor.Green;
                     }
@@ -126,7 +127,7 @@ namespace MailSim
             Console.ResetColor();
 
             // writes to the log file
-            if (!string.IsNullOrEmpty(logFileName) && logWriter != null)
+            if (!string.IsNullOrEmpty(logFileName))
             {
                 XElement element = new XElement(type.ToString(),
                     new XAttribute("Name", name),

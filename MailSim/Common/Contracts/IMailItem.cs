@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MailSim.Contracts
+namespace MailSim.Common.Contracts
 {
-    interface IMailItem
+    public interface IMailItem
     {
         /// <summary>
         /// Mail subject field
@@ -63,11 +63,5 @@ namespace MailSim.Contracts
         /// </summary>
         /// <returns>IMailItem object that represents the new mail item</returns>
         IMailItem Forward();
-#if false
-        /// <summary>
-        /// HTML Body of the email
-        /// </summary>
-        public string HTMLBody { get; set; }
-#endif
     }
 }

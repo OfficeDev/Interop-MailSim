@@ -4,17 +4,15 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{7E966C34-19D8-4D98-8ADC-234D4311EF63}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <ProjectGuid>{04230714-28EF-4FF7-868E-766808645D4C}</ProjectGuid>
+    <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>MailSim</RootNamespace>
-    <AssemblyName>MailSim</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <RootNamespace>MailSim.ProvidersOM</RootNamespace>
+    <AssemblyName>MailSim.ProvidersOM</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -24,7 +22,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -32,11 +29,12 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-  <PropertyGroup>
-    <ApplicationIcon>
-    </ApplicationIcon>
-  </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.Office.Interop.Outlook, Version=15.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+      <HintPath>..\..\..\..\..\..\Program Files (x86)\Microsoft Visual Studio 12.0\Visual Studio Tools for Office\PIA\Office15\Microsoft.Office.Interop.Outlook.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -46,64 +44,19 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ConfigurationFile.cs" />
-    <Compile Include="ExecuteSequence.cs" />
-    <Compile Include="MailSimMain.cs" />
-    <Compile Include="MailSimTest.cs" />
-    <Compile Include="Operations.cs">
-      <DependentUpon>Operations.xsd</DependentUpon>
-    </Compile>
-    <Compile Include="Options.cs">
-      <DependentUpon>Options.xsd</DependentUpon>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Compile>
+    <Compile Include="AddressBookProviderOM.cs" />
+    <Compile Include="MailFolderProviderOM.cs" />
+    <Compile Include="MailItemProviderOM.cs" />
+    <Compile Include="MailStoreProviderOM.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ProviderFactory.cs" />
-    <Compile Include="Sequence.cs">
-      <DependentUpon>Sequence.xsd</DependentUpon>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="App.config">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Operations.xsd">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="Options.xsd">
-      <SubType>Designer</SubType>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Include="Sequence.xsd">
-      <SubType>Designer</SubType>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="MailSim_gray_310h.ico" />
-    <None Include="Options.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Common\MailSim.Common.csproj">
       <Project>{917a4933-4123-4a49-84ac-6e73648270dd}</Project>
       <Name>MailSim.Common</Name>
     </ProjectReference>
-    <ProjectReference Include="..\MailSim.ProvidersOM\MailSim.ProvidersOM.csproj">
-      <Project>{04230714-28ef-4ff7-868e-766808645d4c}</Project>
-      <Name>MailSim.ProvidersOM</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\MailSim.ProvidersREST\MailSim.ProvidersREST.csproj">
-      <Project>{dbc832c7-790d-4ccb-85fb-1f49a35244db}</Project>
-      <Name>MailSim.ProvidersREST</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <PropertyGroup>
-    <PostBuildEvent>
-    </PostBuildEvent>
-  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

@@ -1,9 +1,20 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.21005.1
+# Visual Studio 14
+VisualStudioVersion = 14.0.23107.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MailSim", "MailSim\MailSim.csproj", "{7E966C34-19D8-4D98-8ADC-234D4311EF63}"
+	ProjectSection(ProjectDependencies) = postProject
+		{04230714-28EF-4FF7-868E-766808645D4C} = {04230714-28EF-4FF7-868E-766808645D4C}
+		{917A4933-4123-4A49-84AC-6E73648270DD} = {917A4933-4123-4A49-84AC-6E73648270DD}
+		{DBC832C7-790D-4CCB-85FB-1F49A35244DB} = {DBC832C7-790D-4CCB-85FB-1F49A35244DB}
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MailSim.Common", "Common\MailSim.Common.csproj", "{917A4933-4123-4A49-84AC-6E73648270DD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MailSim.ProvidersOM", "MailSim.ProvidersOM\MailSim.ProvidersOM.csproj", "{04230714-28EF-4FF7-868E-766808645D4C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MailSim.ProvidersREST", "MailSim.ProvidersREST\MailSim.ProvidersREST.csproj", "{DBC832C7-790D-4CCB-85FB-1F49A35244DB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +26,18 @@ Global
 		{7E966C34-19D8-4D98-8ADC-234D4311EF63}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7E966C34-19D8-4D98-8ADC-234D4311EF63}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7E966C34-19D8-4D98-8ADC-234D4311EF63}.Release|Any CPU.Build.0 = Release|Any CPU
+		{917A4933-4123-4A49-84AC-6E73648270DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{917A4933-4123-4A49-84AC-6E73648270DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{917A4933-4123-4A49-84AC-6E73648270DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{917A4933-4123-4A49-84AC-6E73648270DD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{04230714-28EF-4FF7-868E-766808645D4C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{04230714-28EF-4FF7-868E-766808645D4C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{04230714-28EF-4FF7-868E-766808645D4C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{04230714-28EF-4FF7-868E-766808645D4C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DBC832C7-790D-4CCB-85FB-1F49A35244DB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DBC832C7-790D-4CCB-85FB-1F49A35244DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DBC832C7-790D-4CCB-85FB-1F49A35244DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DBC832C7-790D-4CCB-85FB-1F49A35244DB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

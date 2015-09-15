@@ -30,8 +30,6 @@
       </xs:sequence>
       <!-- Specifies the location for storing the log file-->
       <xs:attribute name="LogFileLocation" type="xs:string" use="optional" />
-      <!-- Specifies whether to turn off Outlook security prompt-->
-      <xs:attribute name="DisableOutlookPrompt" type="xs:boolean" use="optional" />
     </xs:complexType>
   </xs:element>
 </xs:schema>

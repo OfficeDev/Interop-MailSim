@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MailSim.Contracts
+namespace MailSim.Common.Contracts
 {
-    interface IMailStore
+    public interface IMailStore
     {
         /// <summary>
         /// Creates new MailItem associated with this MailStore. 

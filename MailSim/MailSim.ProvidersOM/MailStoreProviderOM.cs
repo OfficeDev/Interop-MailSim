@@ -4,13 +4,14 @@ using System.Linq;
 using System.Runtime.InteropServices;
 
 using Outlook = Microsoft.Office.Interop.Outlook;
-using MailSim.Contracts;
+using MailSim.Common;
+using MailSim.Common.Contracts;
 using System.Diagnostics;
 using Microsoft.Win32;
 
 namespace MailSim.ProvidersOM
 {
-    class MailStoreProviderOM : IMailStore
+    public class MailStoreProviderOM : IMailStore
     {
         private const string OfficeVersion = "15.0";
         private const string OfficePolicyRegistryRoot = @"Software\Policies\Microsoft\Office\" + OfficeVersion;
@@ -33,7 +34,7 @@ namespace MailSim.ProvidersOM
             {"olFolderSentMail", Outlook.OlDefaultFolders.olFolderSentMail},
         };
 
-        internal MailStoreProviderOM(string mailboxName, bool disableOutlookPrompt)
+        public MailStoreProviderOM(string mailboxName, bool disableOutlookPrompt)
         {
             _disableOutlookPrompt = disableOutlookPrompt;
 
@@ -252,7 +253,7 @@ namespace MailSim.ProvidersOM
             }
             catch (Exception ex)
             {
-                Log.Out(Log.Severity.Error, "", "Unable to change registry, you may want to run this as Administrator\n" + ex.ToString());
+                Log.Out(Log.Severity.Error, "", "Unable to change registry, you may want to run this as Administrator\n{0}", ex);
             }
         }
     }

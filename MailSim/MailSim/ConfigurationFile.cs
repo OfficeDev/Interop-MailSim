@@ -12,7 +12,7 @@ using System.IO;
 using System.Xml;
 using System.Xml.Serialization;
 using System.Xml.Schema;
-
+using MailSim.Common;
 
 namespace MailSim
 {
@@ -30,8 +30,7 @@ namespace MailSim
         /// <returns>Returns MailSimSequence if successful, otherwise returns null</returns>
         public static MailSimSequence LoadSequenceFile(string sequenceFile)
         {
-            XmlDocument outXML = null;
-            return LoadXml<MailSimSequence>(sequenceFile, SequenceSchema, out outXML);
+            return LoadXml<MailSimSequence>(sequenceFile, SequenceSchema);
         }
 
 
@@ -41,16 +40,22 @@ namespace MailSim
         /// <param name="opFile">Path and file name of the operation file</param>
         /// <param name="opXML">XmlDocument of the operation file</param>
         /// <returns>Returns MailSimOperations if successful, otherwise returns null </returns>
-        public static MailSimOperations LoadOperationFile(string opFile, out XmlDocument opXML)
+        public static MailSimOperations LoadOperationFile(string opFile)
         {
-            return LoadXml<MailSimOperations>(opFile, OperationSchema, out opXML);
+            return LoadXml<MailSimOperations>(opFile, OperationSchema);
+        }
+
+        public static T LoadXml<T>(string xmlFile, string schemaFile)
+        {
+            XmlDocument opXML;
+            return LoadXml<T>(xmlFile, schemaFile, out opXML);
         }
 
         private static T LoadXml<T>(string xmlFile, string schemaFile, out XmlDocument outXML)
         {
             outXML = null;
 
-            if (!xmlFile.EndsWith(".xml", StringComparison.InvariantCultureIgnoreCase) || !File.Exists(xmlFile))
+            if (/*!xmlFile.EndsWith(".xml", StringComparison.InvariantCultureIgnoreCase) ||*/ !File.Exists(xmlFile))
             {
                 Log.Out(Log.Severity.Error, XMLProcessing, "Specified xml file {0} does not exist", xmlFile);
                 return default(T);

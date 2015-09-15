@@ -5,7 +5,8 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Outlook = Microsoft.Office.Interop.Outlook;
-using MailSim.Contracts;
+using MailSim.Common.Contracts;
+using MailSim.Common;
 
 namespace MailSim.ProvidersOM
 {
@@ -91,6 +92,7 @@ namespace MailSim.ProvidersOM
                 return ((null == _folder.Items) ? 0 : _folder.Items.Count);
             }
         }
+
         public int SubFoldersCount
         {
             get
@@ -108,10 +110,29 @@ namespace MailSim.ProvidersOM
         {
             get
             {
-                return GetMailItems();
+//                return GetMailItems();
+                return GetMailItems(string.Empty, int.MaxValue);
             }
         }
 
+        public IEnumerable<IMailItem> GetMailItems(string filter, int count)
+        {
+            if (null == _folder.Items)
+            {
+                yield break;
+            }
+
+            filter = filter ?? string.Empty;
+
+            foreach (Outlook.MailItem item in _folder.Items)
+            {
+                if (item.Subject.ContainsCaseInsensitive(filter) && count-- > 0)
+                {
+                    yield return new MailItemProviderOM(item);
+                }
+            }
+        }
+#if false
         private IEnumerable<IMailItem> GetMailItems()
         {
             if (null == _folder.Items)
@@ -125,6 +146,21 @@ namespace MailSim.ProvidersOM
             }
         }
 
+        public IEnumerable<IMailItem> GetMailItems(int count)
+        {
+            if (null == _folder.Items)
+            {
+                yield break;
+            }
+
+            int last = Math.Min(count, _folder.Items.Count);
+
+            for (int i = 0; i < last; i++)
+            {
+                yield return new MailItemProviderOM(_folder.Items[i] as Outlook.MailItem);
+            }
+        }
+#endif
         internal Outlook.Folder Handle
         {
             get
