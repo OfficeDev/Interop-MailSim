@@ -88,7 +88,7 @@ namespace MailSim.ProvidersREST
                     Size = bytes.Length
                 };
 
-                msgFetcher.Attachments.AddAttachmentAsync(fileAttachment).Wait();
+                msgFetcher.Attachments.AddAttachmentAsync(fileAttachment).GetResult();
             }
         }
 
@@ -118,11 +118,11 @@ namespace MailSim.ProvidersREST
 
             if (replyAll)
             {
-                replyMsg = Message.CreateReplyAllAsync().Result;
+                replyMsg = Message.CreateReplyAllAsync().GetResult();
             }
             else
             {
-                replyMsg = Message.CreateReplyAsync().Result;
+                replyMsg = Message.CreateReplyAsync().GetResult();
             }
 
             return new MailItemProviderSDK(_outlookClient, replyMsg);
@@ -132,7 +132,7 @@ namespace MailSim.ProvidersREST
         {
             IMessage msg = null;
 
-            msg = Message.CreateForwardAsync().Result;
+            msg = Message.CreateForwardAsync().GetResult();
 
             return new MailItemProviderSDK(_outlookClient, msg);
         }
@@ -140,7 +140,7 @@ namespace MailSim.ProvidersREST
         public void Send()
         {
             // This generates Me/SendMail; all the data should be in the body
-            Message.SendAsync().Wait();
+            Message.SendAsync().GetResult();
         }
         
         // TODO: Should this method return a IMailItem?
@@ -149,12 +149,12 @@ namespace MailSim.ProvidersREST
             var folderProvider = newFolder as MailFolderProviderSDK;
 
             var folderId = folderProvider.Handle;
-            Message.MoveAsync(folderId).Wait();
+            Message.MoveAsync(folderId).GetResult();
         }
 
         public void Delete()
         {
-            _message.DeleteAsync().Wait();
+            _message.DeleteAsync().GetResult();
         }
 
         public bool ValidateRecipients()
@@ -183,11 +183,10 @@ namespace MailSim.ProvidersREST
         {
             IMessage message = null;
 
-            message = _outlookClient.Me.Messages[_message.Id].ExecuteAsync().Result;
-
+            message = _outlookClient.Me.Messages[_message.Id].ExecuteAsync().GetResult();
             action(message);
 
-            message.UpdateAsync().Wait();
+            message.UpdateAsync().GetResult();
         }
     }
 }

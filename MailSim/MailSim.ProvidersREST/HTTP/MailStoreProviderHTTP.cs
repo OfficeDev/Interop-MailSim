@@ -14,7 +14,7 @@ namespace MailSim.ProvidersREST
         public MailStoreProviderHTTP(string userName, string password) :
             base(userName, password)
         {
-            var user = HttpUtil.GetItemAsync<User>(string.Empty).Result;
+            var user = HttpUtilSync.GetItem<User>(string.Empty);
             DisplayName = user.Id;
             RootFolder = new MailFolderProviderHTTP(null, DisplayName);
         }
@@ -40,7 +40,7 @@ namespace MailSim.ProvidersREST
             };
 
             // Save the draft message.
-            var newMessage = HttpUtil.PostItemAsync("Messages", message).Result;
+            var newMessage = HttpUtilSync.PostItem("Messages", message);
 
             return new MailItemProviderHTTP(newMessage);
         }

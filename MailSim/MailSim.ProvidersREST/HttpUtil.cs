@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 using System.Net.Http.Formatting;
 using System.Dynamic;
 using System.Linq;
+using MailSim.Common;
 
 namespace MailSim.ProvidersREST
 {
@@ -44,7 +45,7 @@ namespace MailSim.ProvidersREST
             }
         }
 
-        internal static async Task<ODataCollection<T>> GetCollectionAsync<T>(string uri)
+        private static async Task<ODataCollection<T>> GetCollectionAsync<T>(string uri)
         {
             return await DoHttp<EmptyBody, ODataCollection<T>>(HttpMethod.Get, uri, null);
         }
@@ -54,12 +55,12 @@ namespace MailSim.ProvidersREST
             return await DoHttp<T, T>(HttpMethod.Post, uri, item);
         }
 
-        internal static async Task<T> PostDynamicAsync<T>(string uri, dynamic body)
+        internal static async Task<T> PostItemDynamicAsync<T>(string uri, dynamic body)
         {
             return await DoHttp<ExpandoObject, T>(HttpMethod.Post, uri, body);
         }
 
-        internal static async Task DeleteAsync(string uri)
+        internal static async Task DeleteItemAsync(string uri)
         {
             using (HttpClient client = GetHttpClient())
             {
@@ -77,16 +78,15 @@ namespace MailSim.ProvidersREST
         private static async Task<TResult> DoHttp<TBody, TResult>(HttpMethod method, string uri, TBody body)
         {
             HttpResponseMessage response;
+            var request = new HttpRequestMessage(method, BuildUri(uri));
+
+            if (body != null)
+            {
+                request.Content = new ObjectContent<TBody>(body, new JsonMediaTypeFormatter());
+            }
 
             using (HttpClient client = GetHttpClient())
             {
-                var request = new HttpRequestMessage(method, BuildUri(uri));
-
-                if (body != null)
-                {
-                    request.Content = new ObjectContent<TBody>(body, new JsonMediaTypeFormatter());
-                }
-
                 response = await client.SendAsync(request);
             }
 

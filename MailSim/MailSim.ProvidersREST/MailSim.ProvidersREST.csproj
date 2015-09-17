@@ -121,6 +121,8 @@
   <ItemGroup>
     <Compile Include="AddressBookProvider.cs" />
     <Compile Include="AuthenticationHelper.cs" />
+    <Compile Include="Helpers.cs" />
+    <Compile Include="HttpUtilSync.cs" />
     <Compile Include="HTTP\MailFolderProviderHTTP.cs" />
     <Compile Include="HTTP\MailItemProviderHTTP.cs" />
     <Compile Include="HTTP\MailStoreProviderHTTP.cs" />

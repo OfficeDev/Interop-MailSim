@@ -23,7 +23,7 @@ namespace MailSim.ProvidersREST
         {
             _outlookClient = GetOutlookClient("Mail");
 
-            _user = _outlookClient.Me.ExecuteAsync().Result;
+            _user = _outlookClient.Me.ExecuteAsync().GetResult();
 
             DisplayName = _user.Id;
             RootFolder = new MailFolderProviderSDK(_outlookClient, _user.Id);
@@ -50,7 +50,7 @@ namespace MailSim.ProvidersREST
             };
 
             // Save the draft message. Saving to Me.Messages saves the message in the Drafts folder.
-            _outlookClient.Me.Messages.AddMessageAsync(message).Wait();
+            _outlookClient.Me.Messages.AddMessageAsync(message).GetResult();
 
             return new MailItemProviderSDK(_outlookClient, message);
         }

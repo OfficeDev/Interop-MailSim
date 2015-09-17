@@ -82,7 +82,7 @@ namespace MailSim.ProvidersREST
                     Name = name,
                 };
 
-                HttpUtil.PostItemAsync(Uri + "/attachments", fileAttachment).Wait();
+                HttpUtilSync.PostItem(Uri + "/attachments", fileAttachment);
             }
         }
 
@@ -107,22 +107,22 @@ namespace MailSim.ProvidersREST
         {
             string uri = Uri + (replyAll ? "/CreateReplyAll" : "/CreateReply");
 
-            Message replyMsg = HttpUtil.PostItemAsync<Message>(Uri + "/CreateReply").Result;
+            Message replyMsg = HttpUtilSync.PostItem<Message>(Uri + "/CreateReply");
 
             return new MailItemProviderHTTP(replyMsg);
         }
 
         public IMailItem Forward()
         {
-            Message msg = HttpUtil.PostItemAsync<Message>(Uri + "/CreateForward").Result;
+            Message msg = HttpUtilSync.PostItem<Message>(Uri + "/CreateForward");
 
             return new MailItemProviderHTTP(msg);
         }
 
         public void Send()
         {
-            HttpUtil.PatchItemAsync(Uri, _message).Wait();
-            HttpUtil.PostItemAsync<Message>(Uri + "/Send").Wait();
+            HttpUtilSync.PatchItem(Uri, _message);
+            HttpUtilSync.PostItem<Message>(Uri + "/Send");
         }
 
         // TODO: Should this method return a IMailItem?
@@ -135,12 +135,12 @@ namespace MailSim.ProvidersREST
             dynamic destination = new ExpandoObject();
             destination.DestinationId = folderId;
 
-            HttpUtil.PostDynamicAsync<Message>(Uri + "/Move", destination).Wait();
+            HttpUtilSync.PostItemDynamic<Message>(Uri + "/Move", destination);
         }
 
         public void Delete()
         {
-            HttpUtil.DeleteAsync(Uri).Wait();
+            HttpUtilSync.DeleteItem(Uri);
             _message = null;
         }
 

@@ -9,6 +9,8 @@ namespace MailSim
     {
         public static IMailStore CreateMailStore(string mailboxName, MailSimOptions options)
         {
+            Log.Out(Log.Severity.Info, "CreateMailStore", "Starting execution for provider " + options.ProviderType);
+
             switch (options.ProviderType)
             {
                 case MailSimOptionsProviderType.OOM:

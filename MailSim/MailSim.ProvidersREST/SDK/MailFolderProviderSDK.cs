@@ -61,14 +61,14 @@ namespace MailSim.ProvidersREST
                 {
                     // TODO: CountAsync() method fails; have to use direct HTTP call
 #if true
-                    return FoldersCountRequest().Result;
+                    return FoldersCountRequest();
 #else
                     return (int) _outlookClient.Me.Folders.CountAsync().Result;
 #endif
                 }
                 else
                 {
-                    IFolder folder = _folderFetcher.Value.ExecuteAsync().Result;
+                    IFolder folder = _folderFetcher.Value.ExecuteAsync().GetResult();
                     return folder.ChildFolderCount ?? 0;
                 }
             }
@@ -89,7 +89,7 @@ namespace MailSim.ProvidersREST
             var pages = _folderFetcher.Value.Messages
                 .Take(100)      // set the page size
                 .ExecuteAsync()
-                .Result;
+                .GetResult();
 
             filter = filter ?? string.Empty;
 
@@ -100,9 +100,9 @@ namespace MailSim.ProvidersREST
 
         public void Delete()
         {
-            var folder = _folderFetcher.Value.ExecuteAsync().Result;
+            var folder = _folderFetcher.Value.ExecuteAsync().GetResult();
 
-            folder.DeleteAsync().Wait();
+            folder.DeleteAsync().GetResult();
         }
 
         public IMailFolder AddSubFolder(string name)
@@ -159,7 +159,7 @@ namespace MailSim.ProvidersREST
 
             while (count > 0 && pages.MorePagesAvailable)
             {
-                pages = pages.GetNextPageAsync().Result;
+                pages = pages.GetNextPageAsync().GetResult();
 
                 foreach (var item in pages.CurrentPage)
                 {
@@ -180,7 +180,7 @@ namespace MailSim.ProvidersREST
             long count = 0;
             // TODO: CountAsync() method fails; have to use direct HTTP call
 #if true
-            count = MailCountRequest(_id).Result;
+            count = MailCountRequest(_id);
 #else
             count = _folderFetcher.Messages.CountAsync().Result;
 #endif
@@ -191,23 +191,23 @@ namespace MailSim.ProvidersREST
         {
             var folderCollection = _isRoot ? _outlookClient.Me.Folders : _folderFetcher.Value.ChildFolders;
 
-            IPagedCollection<IFolder> folders = folderCollection.ExecuteAsync().Result;
+            IPagedCollection<IFolder> folders = folderCollection.ExecuteAsync().GetResult();
 
             var allFolders = GetFilteredItems(folders, int.MaxValue, (f) => true);
 
             return allFolders.Select(f => new MailFolderProviderSDK(_outlookClient, f));
         }
 
-        private async Task<int> MailCountRequest(string folderId)
+        private int MailCountRequest(string folderId)
         {
             string uri = string.Format("Folders/{0}/Messages/$count", folderId);
 
-            return await HttpUtil.GetItemAsync<int>(uri);
+            return HttpUtilSync.GetItem<int>(uri);
         }
 
-        private async Task<int> FoldersCountRequest()
+        private int FoldersCountRequest()
         {
-            return await HttpUtil.GetItemAsync<int>("Folders/$count");
+            return HttpUtilSync.GetItem<int>("Folders/$count");
         }
     }
 }

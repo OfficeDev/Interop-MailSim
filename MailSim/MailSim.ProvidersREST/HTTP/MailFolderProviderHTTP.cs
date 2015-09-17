@@ -74,7 +74,7 @@ namespace MailSim.ProvidersREST
 
         public void Delete()
         {
-            HttpUtil.DeleteAsync(Uri).Wait();
+            HttpUtilSync.DeleteItem(Uri);
         }
 
         public IEnumerable<IMailItem> GetMailItems(string filter, int count)
@@ -93,7 +93,7 @@ namespace MailSim.ProvidersREST
             dynamic folderName = new ExpandoObject();
             folderName.DisplayName = name;
 
-            Folder newFolder = HttpUtil.PostDynamicAsync<Folder>(Uri + "/ChildFolders", folderName).Result;
+            Folder newFolder = HttpUtilSync.PostItemDynamic<Folder>(Uri + "/ChildFolders", folderName);
 
             return new MailFolderProviderHTTP(newFolder);
         }
@@ -151,18 +151,18 @@ namespace MailSim.ProvidersREST
 
         private int GetMailCount()
         {
-            return HttpUtil.GetItemAsync<int>(Uri + "/Messages/$count").Result;
+            return HttpUtilSync.GetItem<int>(Uri + "/Messages/$count");
         }
 
         private int GetChildFolderCount()
         {
             if (_folder == null)
             {
-                return HttpUtil.GetItemAsync<int>("Folders/$count").Result;
+                return HttpUtilSync.GetItem<int>("Folders/$count");
             }
             else
             {
-                return HttpUtil.GetItemAsync<int>(Uri + "/ChildFolders/$count").Result;
+                return HttpUtilSync.GetItem<int>(Uri + "/ChildFolders/$count");
             }
         }
 
