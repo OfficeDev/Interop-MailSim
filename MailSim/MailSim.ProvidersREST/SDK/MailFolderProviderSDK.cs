@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.Office365.OutlookServices;
 using MailSim.Common.Contracts;
 using Microsoft.OData.ProxyExtensions;
@@ -41,7 +39,7 @@ namespace MailSim.ProvidersREST
         {
             get
             {
-                return Name;    // TODO: is it the right thing to do?
+                return Name;
             }
         }
 
@@ -85,7 +83,6 @@ namespace MailSim.ProvidersREST
 
         public IEnumerable<IMailItem> GetMailItems(string filter, int count)
         {
-            // TODO: there is no way right now to filter mails server-side
             var pages = _folderFetcher.Value.Messages
                 .Take(100)      // set the page size
                 .ExecuteAsync()
@@ -143,7 +140,7 @@ namespace MailSim.ProvidersREST
             // TODO: Implement this
         }
 
-        private IEnumerable<T> GetFilteredItems<T>(IPagedCollection<T> pages, int count, Func<T, bool> filter)
+        private static IEnumerable<T> GetFilteredItems<T>(IPagedCollection<T> pages, int count, Func<T, bool> filter)
         {
             foreach (var item in pages.CurrentPage)
             {
@@ -202,12 +199,17 @@ namespace MailSim.ProvidersREST
         {
             string uri = string.Format("Folders/{0}/Messages/$count", folderId);
 
-            return HttpUtilSync.GetItem<int>(uri);
+            return HttpUtil.GetItemAsync<int>(uri, GetToken).GetResult();
         }
 
         private int FoldersCountRequest()
         {
-            return HttpUtilSync.GetItem<int>("Folders/$count");
+            return HttpUtil.GetItemAsync<int>("Folders/$count", GetToken).GetResult();
+        }
+
+        private string GetToken(bool isRefresh)
+        {
+            return AuthenticationHelperSDK.GetToken(Constants.OfficeResourceId);
         }
     }
 }

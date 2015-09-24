@@ -5,12 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 using MailSim.Common.Contracts;
 using System.Dynamic;
-using System.Net;
 using MailSim.Common;
 
 namespace MailSim.ProvidersREST
 {
-    class MailFolderProviderHTTP : IMailFolder
+    class MailFolderProviderHTTP : HTTP.BaseProviderHttp, IMailFolder
     {
         private const int PageSize = 100;   // the page to use for $top argument
         private readonly Folder _folder;
@@ -36,7 +35,7 @@ namespace MailSim.ProvidersREST
         {
             get
             {
-                return Name;    // TODO: is it the right thing to do?
+                return Name;
             }
         }
  
@@ -79,7 +78,7 @@ namespace MailSim.ProvidersREST
 
         public IEnumerable<IMailItem> GetMailItems(string filter, int count)
         {
-            var msgs = GetMessages(filter, count);
+            var msgs = GetMessages(count);
 
             var items = msgs.Select(x => new MailItemProviderHTTP(x));
 
@@ -166,26 +165,11 @@ namespace MailSim.ProvidersREST
             }
         }
 
-        private IEnumerable<MailItemProviderHTTP.Message> GetMessages(string filter, int count)
+        private IEnumerable<MailItemProviderHTTP.Message> GetMessages(int count)
         {
-            string uri;
+            string uri = Uri + string.Format("/Messages?&$top={0}", PageSize);
 
-            if (string.IsNullOrEmpty(filter))
-            {
-                uri = Uri + string.Format("/Messages?&$top={0}", PageSize);
-            }
-            else
-            {
-                // TODO: We'd really like to use server-side filtering,
-                // but it looks like search only works in terms of StartsWith method.
-#if true
-                uri = Uri + string.Format("/Messages?&$top={0}", PageSize);
-#else
-                uri = Uri + string.Format("/Messages?$search=\"{1}\"&$top={0}", PageSize, filter);
-#endif
-            }
-
-            return HttpUtil.EnumerateCollection<MailItemProviderHTTP.Message>(uri, count);
+            return HttpUtilSync.GetItems<MailItemProviderHTTP.Message>(uri, count);
         }
 
         private static void StartNotificationListener(string id, Action<IMailItem> callback)
@@ -196,7 +180,7 @@ namespace MailSim.ProvidersREST
         {
             string uri = _folder == null ? "Folders" : Uri + "/ChildFolders";
 
-            var folders = HttpUtil.EnumerateCollection<Folder>(uri, int.MaxValue);
+            var folders = HttpUtilSync.GetItems<Folder>(uri, int.MaxValue);
 
             return folders.Select(f => new MailFolderProviderHTTP(f));
         }

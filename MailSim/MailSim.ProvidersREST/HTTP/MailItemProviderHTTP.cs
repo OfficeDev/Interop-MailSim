@@ -1,15 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using MailSim.Common.Contracts;
 using System.IO;
 using System.Dynamic;
 
 namespace MailSim.ProvidersREST
 {
-    class MailItemProviderHTTP : IMailItem
+    class MailItemProviderHTTP : HTTP.BaseProviderHttp, IMailItem
     {
         private Message _message;
 
@@ -125,8 +122,7 @@ namespace MailSim.ProvidersREST
             HttpUtilSync.PostItem<Message>(Uri + "/Send");
         }
 
-        // TODO: Should this method return a IMailItem?
-        public void Move(IMailFolder newFolder)
+       public void Move(IMailFolder newFolder)
         {
             var folderProvider = newFolder as MailFolderProviderHTTP;
 
@@ -163,7 +159,7 @@ namespace MailSim.ProvidersREST
         {
             get
             {
-                return string.Format("/Messages/{0}", _message.Id);
+                return string.Format("Messages/{0}", _message.Id);
             }
         }
 

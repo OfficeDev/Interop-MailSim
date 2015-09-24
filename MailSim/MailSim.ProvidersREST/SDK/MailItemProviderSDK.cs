@@ -1,9 +1,6 @@
 ﻿using Microsoft.Office365.OutlookServices;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using MailSim.Common.Contracts;
 using System.IO;
 
@@ -143,7 +140,6 @@ namespace MailSim.ProvidersREST
             Message.SendAsync().GetResult();
         }
         
-        // TODO: Should this method return a IMailItem?
         public void Move(IMailFolder newFolder)
         {
             var folderProvider = newFolder as MailFolderProviderSDK;
