@@ -30,6 +30,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="JWT, Version=1.3.3.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\JWT.1.3.4\lib\3.5\JWT.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Microsoft.Azure.ActiveDirectory.GraphClient">
       <HintPath>..\packages\Microsoft.Azure.ActiveDirectory.GraphClient.2.1.0\lib\portable-net4+sl5+win+wpa+wp8\Microsoft.Azure.ActiveDirectory.GraphClient.dll</HintPath>
     </Reference>
@@ -112,6 +116,7 @@
       <HintPath>..\packages\System.Spatial.5.6.4\lib\net40\System.Spatial.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -119,22 +124,28 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AddressBookProvider.cs" />
-    <Compile Include="AuthenticationHelper.cs" />
+    <Compile Include="Constants.cs" />
+    <Compile Include="Helpers.cs" />
+    <Compile Include="HTTP\AddressBookProviderHTTP.cs" />
+    <Compile Include="HTTP\AuthenticationHelperHTTP.cs" />
+    <Compile Include="HTTP\BaseProviderHttp.cs" />
+    <Compile Include="HTTP\HttpUtilSync.cs" />
     <Compile Include="HTTP\MailFolderProviderHTTP.cs" />
     <Compile Include="HTTP\MailItemProviderHTTP.cs" />
     <Compile Include="HTTP\MailStoreProviderHTTP.cs" />
-    <Compile Include="MailStoreProviderBase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <Compile Include="SDK\AddressBookProviderSDK.cs" />
+    <Compile Include="SDK\AuthenticationHelperSDK.cs" />
     <Compile Include="SDK\MailFolderProviderSDK.cs" />
     <Compile Include="SDK\MailItemProviderSDK.cs" />
     <Compile Include="SDK\MailStoreProviderSDK.cs" />
     <Compile Include="HttpUtil.cs" />
+    <Compile Include="WellKnownFolders.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Common\MailSim.Common.csproj">
@@ -146,7 +157,9 @@
     <None Include="app.config">
       <SubType>Designer</SubType>
     </None>
-    <None Include="packages.config" />
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources.resx">

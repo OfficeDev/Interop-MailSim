@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.Office365.OutlookServices;
 using MailSim.Common.Contracts;
 using Microsoft.OData.ProxyExtensions;
@@ -41,7 +39,7 @@ namespace MailSim.ProvidersREST
         {
             get
             {
-                return Name;    // TODO: is it the right thing to do?
+                return Name;
             }
         }
 
@@ -61,14 +59,14 @@ namespace MailSim.ProvidersREST
                 {
                     // TODO: CountAsync() method fails; have to use direct HTTP call
 #if true
-                    return FoldersCountRequest().Result;
+                    return FoldersCountRequest();
 #else
                     return (int) _outlookClient.Me.Folders.CountAsync().Result;
 #endif
                 }
                 else
                 {
-                    IFolder folder = _folderFetcher.Value.ExecuteAsync().Result;
+                    IFolder folder = _folderFetcher.Value.ExecuteAsync().GetResult();
                     return folder.ChildFolderCount ?? 0;
                 }
             }
@@ -85,11 +83,10 @@ namespace MailSim.ProvidersREST
 
         public IEnumerable<IMailItem> GetMailItems(string filter, int count)
         {
-            // TODO: there is no way right now to filter mails server-side
             var pages = _folderFetcher.Value.Messages
                 .Take(100)      // set the page size
                 .ExecuteAsync()
-                .Result;
+                .GetResult();
 
             filter = filter ?? string.Empty;
 
@@ -100,9 +97,9 @@ namespace MailSim.ProvidersREST
 
         public void Delete()
         {
-            var folder = _folderFetcher.Value.ExecuteAsync().Result;
+            var folder = _folderFetcher.Value.ExecuteAsync().GetResult();
 
-            folder.DeleteAsync().Wait();
+            folder.DeleteAsync().GetResult();
         }
 
         public IMailFolder AddSubFolder(string name)
@@ -143,7 +140,7 @@ namespace MailSim.ProvidersREST
             // TODO: Implement this
         }
 
-        private IEnumerable<T> GetFilteredItems<T>(IPagedCollection<T> pages, int count, Func<T, bool> filter)
+        private static IEnumerable<T> GetFilteredItems<T>(IPagedCollection<T> pages, int count, Func<T, bool> filter)
         {
             foreach (var item in pages.CurrentPage)
             {
@@ -159,7 +156,7 @@ namespace MailSim.ProvidersREST
 
             while (count > 0 && pages.MorePagesAvailable)
             {
-                pages = pages.GetNextPageAsync().Result;
+                pages = pages.GetNextPageAsync().GetResult();
 
                 foreach (var item in pages.CurrentPage)
                 {
@@ -180,7 +177,7 @@ namespace MailSim.ProvidersREST
             long count = 0;
             // TODO: CountAsync() method fails; have to use direct HTTP call
 #if true
-            count = MailCountRequest(_id).Result;
+            count = MailCountRequest(_id);
 #else
             count = _folderFetcher.Messages.CountAsync().Result;
 #endif
@@ -191,23 +188,28 @@ namespace MailSim.ProvidersREST
         {
             var folderCollection = _isRoot ? _outlookClient.Me.Folders : _folderFetcher.Value.ChildFolders;
 
-            IPagedCollection<IFolder> folders = folderCollection.ExecuteAsync().Result;
+            IPagedCollection<IFolder> folders = folderCollection.ExecuteAsync().GetResult();
 
             var allFolders = GetFilteredItems(folders, int.MaxValue, (f) => true);
 
             return allFolders.Select(f => new MailFolderProviderSDK(_outlookClient, f));
         }
 
-        private async Task<int> MailCountRequest(string folderId)
+        private int MailCountRequest(string folderId)
         {
             string uri = string.Format("Folders/{0}/Messages/$count", folderId);
 
-            return await HttpUtil.GetItemAsync<int>(uri);
+            return HttpUtil.GetItemAsync<int>(uri, GetToken).GetResult();
         }
 
-        private async Task<int> FoldersCountRequest()
+        private int FoldersCountRequest()
         {
-            return await HttpUtil.GetItemAsync<int>("Folders/$count");
+            return HttpUtil.GetItemAsync<int>("Folders/$count", GetToken).GetResult();
+        }
+
+        private string GetToken(bool isRefresh)
+        {
+            return AuthenticationHelperSDK.GetToken(Constants.OfficeResourceId);
         }
     }
 }

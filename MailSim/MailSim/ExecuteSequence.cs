@@ -318,7 +318,7 @@ namespace MailSim
 
                 Log.Out(Log.Severity.Info, operation.OperationName, "Body: {0}", mailToForward.Body);
 
-                if (!AddRecipients(mailToForward, operation/*, operation.Items[0] is MailSimOperationsMailForwardRandomAttachments*/))
+                if (!AddRecipients(mailToForward, operation))
                 {
                     return false;
                 }

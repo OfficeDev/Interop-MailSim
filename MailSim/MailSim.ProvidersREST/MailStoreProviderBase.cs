@@ -25,7 +25,7 @@ namespace MailSim.ProvidersREST
 
         public MailStoreProviderBase(string userName, string password)
         {
-            _adClient = AuthenticationHelper.GetGraphClientAsync(userName, password).Result;
+            _adClient = AuthenticationHelper.GetGraphClientAsync(userName, password).GetResult();
         }
 
         protected IAddressBook GetGAL()
