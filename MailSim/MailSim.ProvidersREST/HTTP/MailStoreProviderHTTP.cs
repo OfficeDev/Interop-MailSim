@@ -1,20 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using MailSim.Common.Contracts;
-using Microsoft.Azure.ActiveDirectory.GraphClient;
-using Newtonsoft.Json.Linq;
 
 namespace MailSim.ProvidersREST
 {
-    public class MailStoreProviderHTTP : MailStoreProviderBase, IMailStore
+    public class MailStoreProviderHTTP : IMailStore
     {
-        public MailStoreProviderHTTP(string userName, string password) :
-            base(userName, password)
+        public MailStoreProviderHTTP(string userName, string password)
         {
-            var user = HttpUtil.GetItemAsync<User>(string.Empty).Result;
+            AuthenticationHelperHTTP.Initialize(userName, password);
+
+            var user = HttpUtilSync.GetItem<User>(string.Empty);
             DisplayName = user.Id;
             RootFolder = new MailFolderProviderHTTP(null, DisplayName);
         }
@@ -22,6 +18,10 @@ namespace MailSim.ProvidersREST
         public string DisplayName { get; private set; }
 
         public IMailFolder RootFolder { get; private set; }
+
+        private HttpUtilSync HttpUtilSync { get { return _providerBase.HttpUtilSync; } }
+
+        private HTTP.BaseProviderHttp _providerBase = new HTTP.BaseProviderHttp();
 
         public IMailItem NewMailItem()
         {
@@ -40,14 +40,14 @@ namespace MailSim.ProvidersREST
             };
 
             // Save the draft message.
-            var newMessage = HttpUtil.PostItemAsync("Messages", message).Result;
+            var newMessage = HttpUtilSync.PostItem("Messages", message);
 
             return new MailItemProviderHTTP(newMessage);
         }
 
         public IMailFolder GetDefaultFolder(string name)
         {
-            string folderName = MapFolderName(name);
+            string folderName = WellKnownFolders.MapFolderName(name);
 
             if (folderName == null)
             {
@@ -93,7 +93,7 @@ namespace MailSim.ProvidersREST
 
         public IAddressBook GetGlobalAddressList()
         {
-            return GetGAL();
+            return new AddressBookProviderHTTP();
         }
 
         private class User

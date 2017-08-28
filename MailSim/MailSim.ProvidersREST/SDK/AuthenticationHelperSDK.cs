@@ -10,16 +10,17 @@ namespace MailSim.ProvidersREST
     /// <summary>
     /// Provides clients for the different service endpoints.
     /// </summary>
-    internal static class AuthenticationHelper
+    internal static class AuthenticationHelperSDK
     {
         private static readonly string ClientID = Resources.ClientID;
+        private static string TenantId { get; set; }
+        private const string AadServiceResourceId = "https://graph.windows.net/";
 
         private static readonly Uri ReturnUri = new Uri(Resources.ReturnUri);
 
         // Properties used for communicating with your Windows Azure AD tenant.
         private const string CommonAuthority = "https://login.microsoftonline.com/Common";
-        private const string AadServiceResourceId = "https://graph.windows.net/";
-        private const string OfficeResourceId = "https://outlook.office365.com/";
+        internal const string OfficeResourceId = "https://outlook.office365.com/";
 
         private const string ModuleName = "AuthenticationHelper";
 
@@ -32,7 +33,6 @@ namespace MailSim.ProvidersREST
         //Property for storing and returning the authority used by the last authentication.
         private static string LastAuthority { get; set; }
         //Property for storing the tenant id so that we can pass it to the ActiveDirectoryClient constructor.
-        internal static string TenantId { get; set; }
         // Property for storing the logged-in user so that we can display user properties later.
         internal static string LoggedInUser { get; set; }
 
@@ -91,14 +91,9 @@ namespace MailSim.ProvidersREST
             }
         }
 
-        internal static string GetOutlookToken()
+        internal static string GetToken(string resourceId)
         {
-            return GetTokenHelper(_authenticationContext, OfficeResourceId);
-        }
-
-        internal static string GetAADToken()
-        {
-            return GetTokenHelper(_authenticationContext, AadServiceResourceId);
+            return GetTokenHelper(_authenticationContext, resourceId);
         }
 
         internal static async Task<string> GetTokenAsync(string resourceId)
@@ -108,7 +103,6 @@ namespace MailSim.ProvidersREST
 
         // Get an access token for the given context and resourceId. An attempt is first made to 
         // acquire the token silently. If that fails, then we try to acquire the token by prompting the user.
-        // TODO: Find a way to call context.AcquireTokenAsync directly.
         private static async Task<string> GetTokenHelperAsync(AuthenticationContext context, string resourceId)
         {
             return await Task.Run(() => GetTokenHelper(context, resourceId));

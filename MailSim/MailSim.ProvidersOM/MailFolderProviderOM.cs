@@ -110,8 +110,7 @@ namespace MailSim.ProvidersOM
         {
             get
             {
-//                return GetMailItems();
-                return GetMailItems(string.Empty, int.MaxValue);
+               return GetMailItems(string.Empty, int.MaxValue);
             }
         }
 
@@ -124,43 +123,24 @@ namespace MailSim.ProvidersOM
 
             filter = filter ?? string.Empty;
 
-            foreach (Outlook.MailItem item in _folder.Items)
+            foreach (var item in _folder.Items)
             {
-                if (item.Subject.ContainsCaseInsensitive(filter) && count-- > 0)
+                var mailItem = item as Outlook.MailItem;
+
+                if (mailItem != null)
                 {
-                    yield return new MailItemProviderOM(item);
+                    if (--count < 0)
+                    {
+                        yield break;
+                    }
+                    if (mailItem.Subject.ContainsCaseInsensitive(filter))
+                    {
+                        yield return new MailItemProviderOM(mailItem);
+                    }
                 }
             }
         }
-#if false
-        private IEnumerable<IMailItem> GetMailItems()
-        {
-            if (null == _folder.Items)
-            {
-                yield break;
-            }
 
-            foreach (var item in _folder.Items)
-            {
-                yield return new MailItemProviderOM(item as Outlook.MailItem);
-            }
-        }
-
-        public IEnumerable<IMailItem> GetMailItems(int count)
-        {
-            if (null == _folder.Items)
-            {
-                yield break;
-            }
-
-            int last = Math.Min(count, _folder.Items.Count);
-
-            for (int i = 0; i < last; i++)
-            {
-                yield return new MailItemProviderOM(_folder.Items[i] as Outlook.MailItem);
-            }
-        }
-#endif
         internal Outlook.Folder Handle
         {
             get

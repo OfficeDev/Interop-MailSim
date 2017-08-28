@@ -1,29 +1,29 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using MailSim.Common;
 using MailSim.Common.Contracts;
 using Microsoft.Office365.OutlookServices;
 using Microsoft.Office365.Discovery;
+using Microsoft.Azure.ActiveDirectory.GraphClient;
 
 namespace MailSim.ProvidersREST
 {
-    public class MailStoreProviderSDK : MailStoreProviderBase, IMailStore
+    public class MailStoreProviderSDK : IMailStore
     {
         private readonly Uri DiscoveryServiceEndpointUri = new Uri("https://api.office.com/discovery/v1.0/me/");
         private const string DiscoveryResourceId = "https://api.office.com/discovery/";
+        private readonly ActiveDirectoryClient _adClient;
 
         private OutlookServicesClient _outlookClient;
-        private readonly IUser _user;
+        private readonly Microsoft.Office365.OutlookServices.IUser _user;
 
-        public MailStoreProviderSDK(string userName, string password) :
-            base(userName, password)
+        public MailStoreProviderSDK(string userName, string password)
         {
+            _adClient = AuthenticationHelperSDK.GetGraphClientAsync(userName, password).GetResult();
             _outlookClient = GetOutlookClient("Mail");
 
-            _user = _outlookClient.Me.ExecuteAsync().Result;
+            _user = _outlookClient.Me.ExecuteAsync().GetResult();
 
             DisplayName = _user.Id;
             RootFolder = new MailFolderProviderSDK(_outlookClient, _user.Id);
@@ -50,14 +50,14 @@ namespace MailSim.ProvidersREST
             };
 
             // Save the draft message. Saving to Me.Messages saves the message in the Drafts folder.
-            _outlookClient.Me.Messages.AddMessageAsync(message).Wait();
+            _outlookClient.Me.Messages.AddMessageAsync(message).GetResult();
 
             return new MailItemProviderSDK(_outlookClient, message);
         }
 
         public IMailFolder GetDefaultFolder(string name)
         {
-            string folderName = MapFolderName(name);
+            string folderName = WellKnownFolders.MapFolderName(name);
 
             if (folderName == null)
             {
@@ -103,7 +103,7 @@ namespace MailSim.ProvidersREST
 
         public IAddressBook GetGlobalAddressList()
         {
-            return base.GetGAL();
+            return new AddressBookProviderSDK(_adClient);
         }
 
         private OutlookServicesClient GetOutlookClient(string capability)
@@ -122,7 +122,7 @@ namespace MailSim.ProvidersREST
 
                 _outlookClient = new OutlookServicesClient(
                     serviceEndpointUri,
-                    async () => await AuthenticationHelper.GetTokenAsync(serviceResourceId));
+                    async () => await AuthenticationHelperSDK.GetTokenAsync(serviceResourceId));
             }
             catch (Exception ex)
             {
@@ -135,7 +135,7 @@ namespace MailSim.ProvidersREST
         private void GetService(string capability, out Uri serviceEndpointUri, out string serviceResourceId)
         {
             var discoveryClient = new DiscoveryClient(DiscoveryServiceEndpointUri,
-                async () => await AuthenticationHelper.GetTokenAsync(DiscoveryResourceId));
+                async () => await AuthenticationHelperSDK.GetTokenAsync(DiscoveryResourceId));
 
             CapabilityDiscoveryResult result = discoveryClient.DiscoverCapabilityAsync(capability).Result;
             serviceEndpointUri = result.ServiceEndpointUri;
