@@ -1,13 +1,3 @@
----
-topic: sample
-products:
-- office-365
-languages:
-- csharp
-extensions:
-  contentType: tools
-  createdDate: 6/4/2015 8:46:18 AM
----
 # Interop-MailSim
 Office Interoperability Tools - MailSim
 
